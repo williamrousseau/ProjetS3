@@ -8,7 +8,7 @@
 /*------------------------------ Librairies ---------------------------------*/
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
-#include <libExample.h> // Vos propres librairies
+#include "doublePID.h" // Vos propres librairies
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
@@ -26,7 +26,7 @@ ArduinoX AX_;                       // objet arduinoX
 MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
-PID pid_;                          // objet PID
+doublePID pid_;                          // objet PID
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
 volatile bool shouldRead_ = false;  // drapeau prêt à lire un message
@@ -46,7 +46,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double pi = 3.14159265359;
-const double WheelR = 0.05;
+const double WheelR = 0.025;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -223,7 +223,8 @@ double PIDmeasurement2(){ //Position du pendule
 }
                              //Dépend des enables de PID:
 void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
-
+  AX_.setMotorPWM(0, cmd);
+  AX_.setMotorPWM(1, cmd);
   // To do
 }
 void PIDgoalReached1(){
