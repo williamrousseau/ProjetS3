@@ -219,7 +219,8 @@ double PIDmeasurement2(){ //Position du pendule
 }
                              //Dépend des enables de PID:
 void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
-
+  AX_.setMotorPWM(0, cmd);
+  AX_.setMotorPWM(1, cmd);
   // To do
 }
 void PIDgoalReached1(){
