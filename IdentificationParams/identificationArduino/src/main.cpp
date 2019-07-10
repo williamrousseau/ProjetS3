@@ -113,7 +113,7 @@ void loop() {
   pid_.run();
 
 
-  pinMode(MAGPIN,OUTPUT)
+  pinMode(MAGPIN,OUTPUT);
   
 }
 
