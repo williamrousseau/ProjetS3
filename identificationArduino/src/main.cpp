@@ -83,13 +83,9 @@ void setup() {
   pid_.setCommandFunc(PIDcommand);
   pid_.setAtGoalFunc(PIDgoalReached);
   pid_.setEpsilon(0.001);
-<<<<<<< HEAD
   pid_.setPeriod(10);
 
   pinMode(MAGPIN,OUTPUT);
-=======
-  pid_.setPeriod(200);
->>>>>>> 4c21e4d28db1b1226766ef11d9690510706824b2
 }
 
 /* Boucle principale (infinie)*/
