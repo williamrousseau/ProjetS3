@@ -32,13 +32,11 @@ class doublePID
 
     /** Method to enable the object
     */
-    void enable1();
-    void enable2();
+    void enable();
 
     /** Method to disable the object
     */
-    void disable1();
-    void disable2();
+    void disable();
     
     /** Method to check if the doublePID needs to be run
     @param goal
@@ -78,6 +76,13 @@ class doublePID
     Derivative constant
     */
     void setKd(double kd1, double kd2){Kd_1 = kd1; Kd_2 = kd2;};
+
+    
+    /** Method to set weightPID_1, weightPID_2
+    @param wPID1, wPID2
+    weight of individual PIDs
+    */ 
+    void setWeight(double wPID1, double wPID2);
 
     /** Method to set period attribute
     @param period
@@ -120,7 +125,7 @@ class doublePID
     @param lim
     limit cumulative error
     */
-    void setIntegralLim(double lim){eIntegralLim_ = lim;};
+    void setIntegralLim(double lim1, double lim2){eIntegralLim_1 = lim1; eIntegralLim_2 = lim2;};
 
     /** Method to set epsilon
     @param eps
@@ -177,7 +182,8 @@ class doublePID
     void (*atGoalFunc1)() = nullptr; // Fonction called when goal is reached
     void (*atGoalFunc2)() = nullptr; // Fonction called when goal is reached
 
-    double command_temp = 0;
+    double commandPID_1 = 0;
+    double commandPID_2 = 0;
     double goal_1 = 0; // Desired state
     double goal_2 = 0; // Desired state
     bool enable_1 = false; // Enable flag
@@ -195,8 +201,14 @@ class doublePID
 
     double epsilon_1 = 5;
     double epsilon_2 = 5;
-    double eIntegralLim_ = 100;
-    double eIntegral_ = 0; // Variable to store the sum of errors
-    double ePrevious = 0; // Variable to store the last error
+    double eIntegralLim_1 = 100;
+    double eIntegralLim_2 = 100;
+    double eIntegral_1 = 0; // Variable to store the sum of errors of PID 1
+    double eIntegral_2 = 0; // Variable to store the sum of errors of PID 2
+    double ePrevious1 = 0; // Variable to store the last error of PID 1
+    double ePrevious2 = 0; // Variable to store the last error of PID 2
+
+    double weightPID_1 = 0;
+    double weightPID_2 = 0;
 };
 #endif //doublePID
