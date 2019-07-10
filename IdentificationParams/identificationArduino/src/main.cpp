@@ -114,7 +114,7 @@ void loop() {
   pid_.run();
 
 
-  pinMode(MAGPIN,OUTPUT)
+  pinMode(MAGPIN,OUTPUT);
   
 }
 
@@ -222,8 +222,10 @@ double PIDmeasurement2(){ //Position du pendule
   
   return analogRead(POTPIN);
 }
-                             //Dépend des enables de PID:
-void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
+
+/* Dépend des enables de PID
+Sortie dépendante des deux PIDS */
+void PIDcommand(double cmd){
   AX_.setMotorPWM(0, cmd);
   AX_.setMotorPWM(1, cmd);
   // To do
