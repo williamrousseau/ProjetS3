@@ -8,7 +8,7 @@
 /*------------------------------ Librairies ---------------------------------*/
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
-#include "doublePID.h" // Vos propres librairies
+#include "doublePID.h" //Librairie gérant 2 PIDs
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
@@ -84,6 +84,7 @@ void setup() {
   
   // Initialisation du PID 1
   pid_.setGains(0.25,0.1 ,0, 0.25,0.1 ,0);       //gains bidons
+  pid_.setWeight(0.5, 0.5);                       //pondérations bidons
     // Attache des fonctions de retour
     pid_.setMeasurementFunc(PIDmeasurement1, PIDmeasurement2);
     pid_.setCommandFunc(PIDcommand);
