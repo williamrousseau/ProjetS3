@@ -14,7 +14,7 @@
 #define BAUD            115200      // Frequence de transmission serielle
 #define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
 
-#define MAGPIN           8          // Port numerique pour electroaimant
+#define MAGPIN          32          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
 
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
@@ -26,7 +26,7 @@ ArduinoX AX_;                       // objet arduinoX
 MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
-PID pid_;                           // objet PID
+PID pid_;                          // objet PID
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
 volatile bool shouldRead_ = false;  // drapeau prêt à lire un message
@@ -36,13 +36,17 @@ volatile bool isInPulse_ = false;   // drapeau pour effectuer un pulse
 SoftTimer timerSendMsg_;            // chronometre d'envoie de messages
 SoftTimer timerPulse_;              // chronometre pour la duree d'un pulse
 
-uint16_t pulseTime_ = 3;            // temps dun pulse en ms
+uint16_t pulseTime_ = 0;            // temps dun pulse en ms
 float pulsePWM_ = 0;                // Amplitude de la tension au moteur [-1,1]
 
 
 float Axyz[3];                      // tableau pour accelerometre
 float Gxyz[3];                      // tableau pour giroscope
 float Mxyz[3];                      // tableau pour magnetometre
+
+const double kgear = 2;
+const double pi = 3.14159265359;
+const double WheelR = 0.05;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -54,9 +58,11 @@ void readMsg();
 void serialEvent();
 
 // Fonctions pour le PID
-double PIDmeasurement();
+double PIDmeasurement1();
+double PIDmeasurement2();
 void PIDcommand(double cmd);
-void PIDgoalReached();
+void PIDgoalReached1();
+void PIDgoalReached2();
 
 /*---------------------------- fonctions "Main" -----------------------------*/
 
@@ -76,15 +82,14 @@ void setup() {
   // Chronometre duration pulse
   timerPulse_.setCallback(endPulse);
   
-  // Initialisation du PID
-  pid_.setGains(0.25,0.1 ,0);
-  // Attache des fonctions de retour
-  pid_.setMeasurementFunc(PIDmeasurement);
-  pid_.setCommandFunc(PIDcommand);
-  pid_.setAtGoalFunc(PIDgoalReached);
-  pid_.setEpsilon(0.001);
+  // Initialisation du PID 1
+  pid_.setGains(0.25,0.1 ,0, 0.25,0.1 ,0);       //gains bidons
+    // Attache des fonctions de retour
+    pid_.setMeasurementFunc(PIDmeasurement1, PIDmeasurement2);
+    pid_.setCommandFunc(PIDcommand);
+    pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
   pid_.setPeriod(10);
-
 }
 
 /* Boucle principale (infinie)*/
@@ -121,7 +126,6 @@ void startPulse(){
   timerPulse_.setRepetition(1);
   AX_.setMotorPWM(0, pulsePWM_);
   AX_.setMotorPWM(1, pulsePWM_);
-  digitalWrite(MAGPIN, HIGH);
   shouldPulse_ = false;
   isInPulse_ = true;
 }
@@ -131,7 +135,6 @@ void endPulse(){
   AX_.setMotorPWM(0,0);
   AX_.setMotorPWM(1,0);
   timerPulse_.disable();
-  digitalWrite(MAGPIN, LOW);
   isInPulse_ = false;
 }
 
@@ -143,8 +146,10 @@ void sendMsg(){
   doc["time"] = millis();
   doc["potVex"] = analogRead(POTPIN);
   doc["encVex"] = vexEncoder_.getCount();
-  doc["goal"] = pid_.getGoal();
-  doc["measurements"] = PIDmeasurement();
+  doc["goal1"] = pid_.getGoal1();
+  doc["goal2"] = pid_.getGoal2();
+  doc["motorPos"] = PIDmeasurement1();
+  doc["pendulumPos"] = PIDmeasurement2();
   doc["voltage"] = AX_.getVoltage();
   doc["current"] = AX_.getCurrent(); 
   doc["pulsePWM"] = pulsePWM_;
@@ -156,8 +161,8 @@ void sendMsg(){
   doc["gyroX"] = imu_.getGyroX();
   doc["gyroY"] = imu_.getGyroY();
   doc["gyroZ"] = imu_.getGyroZ();
-  doc["isGoal"] = pid_.isAtGoal();
-  doc["actualTime"] = pid_.getActualDt();
+  doc["isGoal1"] = pid_.isAtGoal1();
+  doc["isGoal2"] = pid_.isAtGoal2();
 
   // Serialisation
   serializeJson(doc, Serial);
@@ -197,24 +202,29 @@ void readMsg(){
   if(!parse_msg.isNull()){
      shouldPulse_ = doc["pulse"];
   }
-  parse_msg = doc["setGoal"];
-  if(!parse_msg.isNull()){
-    pid_.disable();
-    pid_.setGains(doc["setGoal"][0], doc["setGoal"][1], doc["setGoal"][2]);
-    pid_.setEpsilon(doc["setGoal"][3]);
-    pid_.setGoal(doc["setGoal"][4]);
-    pid_.enable();
-  }
 }
 
 
 // Fonctions pour le PID
-double PIDmeasurement(){
+double PIDmeasurement1(){ //Position du chariot
+  double position1 = AX_.readEncoder(1)*kgear*WheelR*pi*2/3200;
+  double position2 = AX_.readEncoder(2)*kgear*WheelR*pi*2/3200;
+  double position = (position1 + position2)/2;
+  return position;
+}
+double PIDmeasurement2(){ //Position du pendule
+  // To do
+  
+  return analogRead(POTPIN);
+}
+                             //Dépend des enables de PID:
+void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
+
   // To do
 }
-void PIDcommand(double cmd){
+void PIDgoalReached1(){
   // To do
 }
-void PIDgoalReached(){
+void PIDgoalReached2(){
   // To do
 }
