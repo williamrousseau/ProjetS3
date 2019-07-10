@@ -93,6 +93,7 @@ void setup() {
   pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
   pid_.setPeriod(10);
   pid_.setGoal(0.010,0);
+  pid_.enable();
 }
 
 /* Boucle principale (infinie)*/
@@ -230,7 +231,7 @@ void PIDcommand(double cmd){
   AX_.setMotorPWM(1, cmd);
 }
 void PIDgoalReached1(){
-  // To do
+  pid_.disable();
 }
 void PIDgoalReached2(){
   // To do
