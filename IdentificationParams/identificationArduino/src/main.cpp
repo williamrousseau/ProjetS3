@@ -12,7 +12,7 @@
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
-#define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
+#define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
 
 #define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
@@ -113,7 +113,7 @@ void loop() {
   timerPulse_.update();
   
   // mise à jour du PID
-  pid_.run();
+  //pid_.run();
 
 
   pinMode(MAGPIN,OUTPUT);
