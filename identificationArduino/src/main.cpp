@@ -85,7 +85,6 @@ void setup() {
   pid_.setEpsilon(0.001);
   pid_.setPeriod(10);
 
-  pinMode(MAGPIN,OUTPUT);
 }
 
 /* Boucle principale (infinie)*/
