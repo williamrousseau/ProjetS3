@@ -14,7 +14,7 @@
 #define BAUD            115200      // Frequence de transmission serielle
 #define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
 
-#define MAGPIN          32          // Port numerique pour electroaimant
+#define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
 
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
@@ -46,7 +46,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double pi = 3.14159265359;
-const double WheelR = 0.05;
+const double WheelR = 0.025;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -111,6 +111,10 @@ void loop() {
   
   // mise à jour du PID
   pid_.run();
+
+
+  pinMode(MAGPIN,OUTPUT)
+  
 }
 
 /*---------------------------Definition de fonctions ------------------------*/
@@ -219,7 +223,8 @@ double PIDmeasurement2(){ //Position du pendule
 }
                              //Dépend des enables de PID:
 void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
-
+  AX_.setMotorPWM(0, cmd);
+  AX_.setMotorPWM(1, cmd);
   // To do
 }
 void PIDgoalReached1(){
