@@ -46,7 +46,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double pi = 3.14159265359;
-const double WheelR = 0.05;
+const double WheelR = 0.025;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
