@@ -144,7 +144,7 @@ void sendMsg(){
   // Elements du message
 
   doc["time"] = millis();
-  doc["potVex"] = analogRead(POTPIN);
+  doc["potentiometre"] = analogRead(POTPIN);
   doc["encVex"] = vexEncoder_.getCount();
   doc["goal1"] = pid_.getGoal1();
   doc["goal2"] = pid_.getGoal2();
