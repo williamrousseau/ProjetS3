@@ -14,7 +14,7 @@
 #define BAUD            115200      // Frequence de transmission serielle
 #define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
 
-#define MAGPIN          32          // Port numerique pour electroaimant
+#define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
 
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
@@ -111,6 +111,10 @@ void loop() {
   
   // mise à jour du PID
   pid_.run();
+
+
+  pinMode(MAGPIN,OUTPUT)
+  
 }
 
 /*---------------------------Definition de fonctions ------------------------*/
