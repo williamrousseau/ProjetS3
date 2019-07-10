@@ -12,7 +12,7 @@
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
-#define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
+#define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
 
 #define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
@@ -93,6 +93,7 @@ void setup() {
   pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
   pid_.setPeriod(10);
   pid_.setGoal(0.010,0);
+  pid_.enable();
 }
 
 /* Boucle principale (infinie)*/
@@ -113,7 +114,7 @@ void loop() {
   timerPulse_.update();
   
   // mise à jour du PID
-  pid_.run();
+  //pid_.run();
 
 
   pinMode(MAGPIN,OUTPUT);
@@ -230,7 +231,7 @@ void PIDcommand(double cmd){
   AX_.setMotorPWM(1, cmd);
 }
 void PIDgoalReached1(){
-  // To do
+  pid_.disable();
 }
 void PIDgoalReached2(){
   // To do
