@@ -1,6 +1,6 @@
 {
     "name": "Adafruit INA219", 
-    "version": "1.0.4", 
+    "version": "1.0.5", 
     "keywords": [
         "sensors"
     ], 
@@ -13,11 +13,14 @@
         "atmelsam", 
         "espressif32", 
         "espressif8266", 
+        "infineonxmc", 
         "intel_arc32", 
+        "kendryte210", 
         "microchippic32", 
         "nordicnrf51", 
         "nordicnrf52", 
         "ststm32", 
+        "ststm8", 
         "teensy", 
         "timsp430"
     ], 
