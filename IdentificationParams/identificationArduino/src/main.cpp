@@ -9,6 +9,7 @@
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
 #include "doublePID.h" //Librairie gérant 2 PIDs
+#include "sequencement.h"
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
