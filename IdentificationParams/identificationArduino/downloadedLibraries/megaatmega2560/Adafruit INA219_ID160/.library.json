@@ -1,6 +1,10 @@
 {
     "name": "Adafruit INA219", 
+<<<<<<< HEAD
     "version": "1.0.4", 
+=======
+    "version": "1.0.5", 
+>>>>>>> 57004b313f2a66559c2812989c31bf9aa0ce767f
     "keywords": [
         "sensors"
     ], 
@@ -13,11 +17,21 @@
         "atmelsam", 
         "espressif32", 
         "espressif8266", 
+<<<<<<< HEAD
         "intel_arc32", 
+=======
+        "infineonxmc", 
+        "intel_arc32", 
+        "kendryte210", 
+>>>>>>> 57004b313f2a66559c2812989c31bf9aa0ce767f
         "microchippic32", 
         "nordicnrf51", 
         "nordicnrf52", 
         "ststm32", 
+<<<<<<< HEAD
+=======
+        "ststm8", 
+>>>>>>> 57004b313f2a66559c2812989c31bf9aa0ce767f
         "teensy", 
         "timsp430"
     ], 
