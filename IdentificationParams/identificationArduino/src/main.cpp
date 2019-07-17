@@ -234,5 +234,5 @@ void PIDgoalReached1(){
   pid_.disable();
 }
 void PIDgoalReached2(){
-  // To do
+  pid_.disable();
 }
