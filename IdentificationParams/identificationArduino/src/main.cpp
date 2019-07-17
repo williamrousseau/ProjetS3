@@ -14,7 +14,7 @@
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
-#define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
+#define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
 
 #define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
@@ -85,7 +85,7 @@ void setup() {
   timerPulse_.setCallback(endPulse);
   
   // Initialisation du PID 1
-  pid_.setGains(5, 0 ,0.0001,       10, 0, 1);       //gains bidons
+  pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
   pid_.setWeight(1, 0);                       //pondérations bidons
   //pid_.setWeight(1-0.025,0.025);
     // Attache des fonctions de retour
@@ -101,8 +101,6 @@ void setup() {
 
 /* Boucle principale (infinie)*/
 void loop() {
-
-int i=0;
 
   if(shouldRead_){
     readMsg();
@@ -124,8 +122,8 @@ int i=0;
   
 
   //********************************TESTS**************************************
-  
-      switch (1)
+   /*   
+    switch (1)
   {
   case 1:         //T*************TESTS Obstacle************************
 
@@ -141,7 +139,7 @@ int i=0;
             Serial.println("Erreur");  
     break; 
     
-  }
+  }*/
  
 }
 
