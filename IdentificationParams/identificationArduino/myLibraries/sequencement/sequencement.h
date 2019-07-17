@@ -17,6 +17,7 @@ class sequencement
           void osciller();
           void Prise();
           void obstacle();
+          void depot();
 
   private:
 
