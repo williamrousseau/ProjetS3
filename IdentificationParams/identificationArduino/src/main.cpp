@@ -26,7 +26,7 @@ ArduinoX AX_;                       // objet arduinoX
 MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
-doublePID pid_;                          // objet PID
+PID pid_;                          // objet PID
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
 volatile bool shouldRead_ = false;  // drapeau prêt à lire un message
@@ -47,6 +47,9 @@ float Mxyz[3];                      // tableau pour magnetometre
 const double kgear = 2;
 const double WheelR = 0.025;
 
+double position;
+double cmd;
+
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
@@ -57,11 +60,10 @@ void readMsg();
 void serialEvent();
 
 // Fonctions pour le PID
-double PIDmeasurement1();
-double PIDmeasurement2();
+double PIDcartpos();
+double PIDpendulum();
 void PIDcommand(double cmd);
-void PIDgoalReached1();
-void PIDgoalReached2();
+void PIDgoalReached();
 
 /*---------------------------- fonctions "Main" -----------------------------*/
 
@@ -82,17 +84,17 @@ void setup() {
   timerPulse_.setCallback(endPulse);
   
   // Initialisation du PID 1
-  pid_.setGains(5, 0 ,0.0001,       10, 0, 1);       //gains bidons
-  pid_.setWeight(1, 0);                       //pondérations bidons
+  pid_.setGains(5, 0 ,0.0001);       //gains bidons
   //pid_.setWeight(1-0.025,0.025);
     // Attache des fonctions de retour
-    pid_.setMeasurementFunc(PIDmeasurement1, PIDmeasurement2);
+    pid_.setMeasurementFunc(PIDcartpos);
     pid_.setCommandFunc(PIDcommand);
-    pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
-  pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
-  pid_.setPeriod(10);
-  pid_.setGoal(2,0);
-  pid_.enable();
+    pid_.setAtGoalFunc(PIDgoalReached);
+  pid_.setEpsilon(0.005);                 //tolerances bidons
+  pid_.setIntegralLim(100);
+  pid_.setPeriod(50);
+  pid_.setGoal(-0.5);
+  //pid_.enable();
 }
 
 /* Boucle principale (infinie)*/
@@ -112,7 +114,7 @@ void loop() {
   timerSendMsg_.update();
   timerPulse_.update();
   // mise à jour du PID
-  //pid_.run();
+  pid_.run();
 
 
   pinMode(MAGPIN,OUTPUT);
@@ -150,27 +152,23 @@ void sendMsg(){
   // Elements du message
 
   doc["time"] = millis();
-  doc["potentiometre"] = analogRead(POTPIN);
   doc["encVex"] = vexEncoder_.getCount();
-  doc["goal1"] = pid_.getGoal1();
-  doc["goal2"] = pid_.getGoal2();
-  doc["motorPos"] = PIDmeasurement1();
-  doc["pendulumPos"] = PIDmeasurement2();
+  doc["goal"] = pid_.getGoal();
+  doc["motorPos"] = PIDcartpos();
   doc["voltage"] = AX_.getVoltage();
   doc["current"] = AX_.getCurrent(); 
   doc["pulsePWM"] = pulsePWM_;
   doc["pulseTime"] = pulseTime_;
   doc["inPulse"] = isInPulse_;
-//  doc["accelX"] = imu_.getAccelX();
-//  doc["accelY"] = imu_.getAccelY();
-//  doc["accelZ"] = imu_.getAccelZ();
-//  doc["gyroX"] = imu_.getGyroX();
-//  doc["gyroY"] = imu_.getGyroY();
-//  doc["gyroZ"] = imu_.getGyroZ();
-  doc["isGoal1"] = pid_.isAtGoal1();
-  doc["isGoal2"] = pid_.isAtGoal2();
+  doc["isGoal"] = pid_.isAtGoal();
 
-  //doc[""]
+  doc["pendulum"] = analogRead(POTPIN);
+
+  doc["cmd"] = cmd;
+  doc["cur_pos"] = position;
+
+  doc["isEnabled"] = pid_.enable_;
+
 
   // Serialisation
   serializeJson(doc, Serial);
@@ -214,25 +212,33 @@ void readMsg(){
 
 
 // Fonctions pour le PID
-double PIDmeasurement1(){ //Position du chariot
-  double position1 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
-  double position2 = AX_.readEncoder(2)*kgear*WheelR*PI*2/3200;
-  double position = (position1 + position2)/2;
+double PIDcartpos(){ //Position du chariot
+  double position1 = AX_.readEncoder(0)*kgear*WheelR*PI*2/3200;
+  double position2 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
+  position = (position1 + position2)/2;
   return position;
 }
-double PIDmeasurement2(){ //Position du pendule
-  return analogRead(POTPIN);
+
+double PIDpendulum(){ //Position du chariot
+    return analogRead(POTPIN);
 }
 
 /* Dépend des enables de PID
 Sortie dépendante des deux PIDS */
-void PIDcommand(double cmd){
-  AX_.setMotorPWM(0, cmd);
-  AX_.setMotorPWM(1, cmd);
+void PIDcommand(double cmd_){
+  AX_.setMotorPWM(0, cmd_);
+  AX_.setMotorPWM(1, cmd_);
+  cmd = cmd_;
 }
-void PIDgoalReached1(){
+void PIDgoalReached(){
   pid_.disable();
+  AX_.setMotorPWM(0, 0);
+  AX_.setMotorPWM(1, 0);
+  delay(4000);
+  pid_.setGoal(0);
+  pid_.enable();
 }
-void PIDgoalReached2(){
+
+/*void PIDgoalReached(){
   pid_.disable();
-}
+}*/
