@@ -102,6 +102,8 @@ void setup() {
 /* Boucle principale (infinie)*/
 void loop() {
 
+int i=0;
+
   if(shouldRead_){
     readMsg();
   }
@@ -122,8 +124,9 @@ void loop() {
   
 
   //********************************TESTS**************************************
-
-   switch (1)
+  if (i==0)
+  {
+      switch (1)
   {
   case 1:         //T*************TESTS Obstacle************************
 
@@ -140,6 +143,9 @@ void loop() {
     break; 
     
   }
+    i++;
+  }
+ 
  
 
 
