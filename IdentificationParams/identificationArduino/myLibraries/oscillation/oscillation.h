@@ -9,25 +9,40 @@ Class to control a PID
 #define oscillation_H_
 
 #include <Arduino.h>
+#include <LibS3GRO.h>
 
 class oscillation
 {
   public:
-    sequencement();
-    float commandeOscillation(int angle, float commandePrec);
+    oscillation();
+    float commandeOscillation(double angle);
+
+    void setMeasurementFunc(double (*f)()){measurementFunc = f;};
+    void setCommandFunc(void (*f)(double)){commandFunc = f;};
+
     void enable();
-    float vitesseAngulaire(int angle);
+    void vitesseAngulaire(double angle);
+    void run();
+
 
   private:
-    float* tableauMoyenne;
-    float tableauAngle[];
+    int j;
+    float anglePrec;
+    float tableauAngle[10];
     int tailleAngle;
-    int tailleMoyenne;
     int capaciteAngle;
-    int capaciteMoyenne;
     float omega;
-    float epsilon = 0.1;
-    unsigned long measureTime = 0; // Mesure de temps pour cette classe
-    unsigned long dtMs; // Periode entre les commandes
+    float epsilon;
+    unsigned long measureTime_[500]; // Mesure de time pour cette classe
+    unsigned long dtMs_; // Periode entre les commandes
+    bool enabled;
+    float lastCommand;
+    double (*measurementFunc)() = nullptr; // Measurement function
+    void (*commandFunc)(double) = nullptr; // Command function
+    int tailleTemps;
+    int angleZero;
+    int difference;
+    int currentDifference;
+    int sens;
 };
 #endif

@@ -6,78 +6,110 @@ Class to control a PID
 */
 
 #include <Arduino.h>
-#include "sequencement.h"
+#include "oscillation.h"
+#define POTPIN          A5  
 
 oscillation::oscillation()
 {
+    Serial.println("Constructeur");
     tailleAngle = 0;
     capaciteAngle = 10;
-    tailleMoyenne = 0;
-    capaciteMoyenne = 500;
     omega = 0;
-    dtMs = 1; //période de 1 ms
-    tableauMoyenne = new float [capaciteMoyenne];
+    dtMs_ = 1; //période de 1 ms
+    epsilon = 1;
+    tailleTemps = 0;
+    enabled = 0;
+    lastCommand = 0;
+    j = 0;
+    anglePrec = 0;
+    angleZero = 0;
+    currentDifference = 0;
+    sens = 0;
 }
 
 void oscillation::enable()
 {
-    measureTime = millis() + dtMs;
+    measureTime_[tailleTemps] = millis() + dtMs_;
+    enabled = 1;
+    angleZero = measurementFunc();
+    Serial.println("enabled");
 }
 
-float oscillation::commandeOscillation(int angle, float commandePrec)
+void oscillation::run()
 {
-    double commande = commandePrec;
-    if (vitesseAngulaire(angle) < epsilon && vitesseAngulaire(angle) > -1*epsilon)
+    Serial.println("millis:");
+    Serial.println(millis());
+    Serial.println("measureTime_");
+    Serial.println(measureTime_[tailleTemps]);
+   
+    if (millis() >= measureTime_[tailleTemps])
     {
-        if (angle > 0)
+        tailleTemps++;
+        Serial.println("millis >= measureTime_");
+        measureTime_[tailleTemps] = millis() + dtMs_;
+        if (enabled)
         {
-            commande = -0.99;
+            commandeOscillation(measurementFunc());
         }
-        else
+    }
+}
+
+float oscillation::commandeOscillation(double angle)
+{
+    float commande = 0;
+    vitesseAngulaire(angle);
+    Serial.println("Je suis dans comandeOscillation");
+    if (omega > 0)
+    {
+        if(sens == 1)
         {
-            commande = 0.99;
+            difference = fabs(angle - angleZero);
         }
+        sens = -1;
+        currentDifference = fabs(angle - angleZero);
+        commande = -(difference - currentDifference)/difference;
+        commandFunc(commande); 
+    }
+    else
+    {
+        if(sens == -1)
+        {
+            difference = fabs(angle - angleZero);
+        }
+        sens = 1;
+        currentDifference = fabs(angle - angleZero);
+        commande = (difference - currentDifference)/difference;
+        commandFunc(commande); 
     }
     return commande;
 }
 
-float oscillation::vitesseAngulaire(int angle)
+void oscillation::vitesseAngulaire(double angle)
 {
-    if (millis() >= measureTime)
+    float angleLive = 0;
+    tableauAngle[tailleAngle] = angle;
+    tailleAngle++;
+    float somme = 0;
+
+    if (tailleAngle == capaciteAngle)
     {
-        tableauAngle[tailleAngle] = angle;
-        tailleAngle++;
-        float somme = 0;
-
-        if (tailleAngle == capaciteAngle)
+        for (int i=0; i<tailleAngle; i++)
         {
-            for (int i=0; i<tailleAngle; i++)
-            {
-                somme = tableauAngle[i];
-                tableauAngle[i] = 0;
-            }
-
-            tableauMoyenne[tailleMoyenne] = somme/tailleAngle;
-            tailleMoyenne++;
-            tailleAngle = 0;
-
-            if (tailleMoyenne >= capaciteMoyenne)
-            {
-                float tempo[capaciteMoyenne*2];
-                for(int i=0; i<tailleMoyenne; i++)
-                {
-                    tempo[i] = tableauMoyenne[i];
-                    tableauMoyenne[i]=0;
-                }
-                capaciteMoyenne *= 2;
-                delete tableauMoyenne;
-                tableauMoyenne = tempo;
-            }
-            if (tailleMoyenne >= 2)
-            {
-                omega = (tableauMoyenne[tailleMoyenne-1]-tableauMoyenne[tailleMoyenne-2])*1000/dtMs;
-            }
+            somme += tableauAngle[i];
+            tableauAngle[i] = 0;
         }
+
+        angleLive = somme/tailleAngle;
+        tailleAngle = 0;
+
+        if (j >= 1)
+        {
+            omega = (angleLive-anglePrec)*1000/dtMs_;
+        }
+        j++;
+        anglePrec = angleLive;
     }
-    return omega;
+    
+    Serial.println("omega");
+    Serial.println(omega);
 }

@@ -9,6 +9,7 @@
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
 #include "doublePID.h" //Librairie gérant 2 PIDs
+#include "oscillation.h" 
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
@@ -26,7 +27,8 @@ ArduinoX AX_;                       // objet arduinoX
 MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
-doublePID pid_;                          // objet PID
+doublePID pid_;                     // objet PID
+oscillation oscille;
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
 volatile bool shouldRead_ = false;  // drapeau prêt à lire un message
@@ -47,6 +49,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 const double kgear = 2;
 const double pi = 3.14159265359;
 const double WheelR = 0.025;
+int inc = 0;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -81,6 +84,8 @@ void setup() {
 
   // Chronometre duration pulse
   timerPulse_.setCallback(endPulse);
+
+  pinMode(MAGPIN, OUTPUT);
   
   // Initialisation du PID 1
   pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
@@ -94,12 +99,15 @@ void setup() {
   pid_.setPeriod(10);
   pid_.setGoal(0.010,0);
   pid_.enable();
+  oscille.setCommandFunc(PIDcommand);
+  oscille.setMeasurementFunc(PIDmeasurement2);
+  oscille.enable();
 }
 
 /* Boucle principale (infinie)*/
 void loop() {
 
-  if(shouldRead_){
+  /* if(shouldRead_){
     readMsg();
   }
   if(shouldSend_){
@@ -107,16 +115,25 @@ void loop() {
   }
   if(shouldPulse_){
     startPulse();
-  }
+  }*/
 
   // mise a jour des chronometres
   timerSendMsg_.update();
   timerPulse_.update();
   // mise à jour du PID
   //pid_.run();
+  while(inc < 2000)
+  {
+    oscille.run();
+    inc++;
+  }
+  while(inc >= 2000)
+  {
+    AX_.setMotorPWM(0, 0);
+    AX_.setMotorPWM(1, 0);
+  }
 
-
-  pinMode(MAGPIN,OUTPUT);
+  digitalWrite(MAGPIN,HIGH);
   
 }
 
@@ -152,24 +169,11 @@ void sendMsg(){
 
   doc["time"] = millis();
   doc["potentiometre"] = analogRead(POTPIN);
-  doc["encVex"] = vexEncoder_.getCount();
-  doc["goal1"] = pid_.getGoal1();
-  doc["goal2"] = pid_.getGoal2();
   doc["motorPos"] = PIDmeasurement1();
   doc["pendulumPos"] = PIDmeasurement2();
   doc["voltage"] = AX_.getVoltage();
   doc["current"] = AX_.getCurrent(); 
-  doc["pulsePWM"] = pulsePWM_;
-  doc["pulseTime"] = pulseTime_;
-  doc["inPulse"] = isInPulse_;
-//  doc["accelX"] = imu_.getAccelX();
-//  doc["accelY"] = imu_.getAccelY();
-//  doc["accelZ"] = imu_.getAccelZ();
-//  doc["gyroX"] = imu_.getGyroX();
-//  doc["gyroY"] = imu_.getGyroY();
-//  doc["gyroZ"] = imu_.getGyroZ();
-  doc["isGoal1"] = pid_.isAtGoal1();
-  doc["isGoal2"] = pid_.isAtGoal2();
+
 
   // Serialisation
   serializeJson(doc, Serial);
