@@ -10,24 +10,4 @@ Class to control a PID
 
 #include <Arduino.h>
 
-class sequencement
-{
-  public:
-    sequencement();
-    float commandeOscillation(int angle, float commandePrec);
-    void enable();
-    float vitesseAngulaire(int angle);
-
-  private:
-    float* tableauMoyenne;
-    float tableauAngle[];
-    int tailleAngle;
-    int tailleMoyenne;
-    int capaciteAngle;
-    int capaciteMoyenne;
-    float omega;
-    float epsilon = 0.1;
-    unsigned long measureTime = 0; // Mesure de temps pour cette classe
-    unsigned long dtMs; // Periode entre les commandes
-};
 #endif
