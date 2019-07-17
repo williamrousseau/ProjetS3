@@ -8,11 +8,11 @@
 /*------------------------------ Librairies ---------------------------------*/
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
-#include "doublePID.h" // Vos propres librairies
+#include "doublePID.h" //Librairie gérant 2 PIDs
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
-#define UPDATE_PERIODE  100         // Periode (ms) d'envoie d'etat general
+#define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
 
 #define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
@@ -83,13 +83,17 @@ void setup() {
   timerPulse_.setCallback(endPulse);
   
   // Initialisation du PID 1
-  pid_.setGains(0.25,0.1 ,0, 0.25,0.1 ,0);       //gains bidons
+  pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
+  pid_.setWeight(1, 0);                       //pondérations bidons
+  //pid_.setWeight(1-0.025,0.025);
     // Attache des fonctions de retour
     pid_.setMeasurementFunc(PIDmeasurement1, PIDmeasurement2);
     pid_.setCommandFunc(PIDcommand);
     pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
   pid_.setPeriod(10);
+  pid_.setGoal(0.010,0);
+  pid_.enable();
 }
 
 /* Boucle principale (infinie)*/
@@ -110,7 +114,7 @@ void loop() {
   timerPulse_.update();
   
   // mise à jour du PID
-  pid_.run();
+  //pid_.run();
 
 
   pinMode(MAGPIN,OUTPUT);
@@ -148,7 +152,7 @@ void sendMsg(){
   // Elements du message
 
   doc["time"] = millis();
-  doc["potVex"] = analogRead(POTPIN);
+  doc["potentiometre"] = analogRead(POTPIN);
   doc["encVex"] = vexEncoder_.getCount();
   doc["goal1"] = pid_.getGoal1();
   doc["goal2"] = pid_.getGoal2();
@@ -159,12 +163,12 @@ void sendMsg(){
   doc["pulsePWM"] = pulsePWM_;
   doc["pulseTime"] = pulseTime_;
   doc["inPulse"] = isInPulse_;
-  doc["accelX"] = imu_.getAccelX();
-  doc["accelY"] = imu_.getAccelY();
-  doc["accelZ"] = imu_.getAccelZ();
-  doc["gyroX"] = imu_.getGyroX();
-  doc["gyroY"] = imu_.getGyroY();
-  doc["gyroZ"] = imu_.getGyroZ();
+//  doc["accelX"] = imu_.getAccelX();
+//  doc["accelY"] = imu_.getAccelY();
+//  doc["accelZ"] = imu_.getAccelZ();
+//  doc["gyroX"] = imu_.getGyroX();
+//  doc["gyroY"] = imu_.getGyroY();
+//  doc["gyroZ"] = imu_.getGyroZ();
   doc["isGoal1"] = pid_.isAtGoal1();
   doc["isGoal2"] = pid_.isAtGoal2();
 
@@ -217,18 +221,17 @@ double PIDmeasurement1(){ //Position du chariot
   return position;
 }
 double PIDmeasurement2(){ //Position du pendule
-  // To do
-  
   return analogRead(POTPIN);
 }
-                             //Dépend des enables de PID:
-void PIDcommand(double cmd){ //Sortie dépendante des deux PIDS
+
+/* Dépend des enables de PID
+Sortie dépendante des deux PIDS */
+void PIDcommand(double cmd){
   AX_.setMotorPWM(0, cmd);
   AX_.setMotorPWM(1, cmd);
-  // To do
 }
 void PIDgoalReached1(){
-  // To do
+  pid_.disable();
 }
 void PIDgoalReached2(){
   // To do
