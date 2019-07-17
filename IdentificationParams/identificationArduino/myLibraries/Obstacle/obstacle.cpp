@@ -5,20 +5,15 @@ Class to control the obstacles
 @version 1.0 07/17/2019
 */
 
+#include <Arduino.h>
 #include "obstacle.h"
 
-Obstacle::obstacle()
+Obstacle::Obstacle()
 {
     dist = 0;
     haut = 0;
     dist_init = 0;
     haut_init = 0;
-}
-
-
-Obstacle::­~obstacle()
-{
-    
 }
 
 

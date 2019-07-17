@@ -10,6 +10,7 @@
 #include <ArduinoJson.h>
 #include "doublePID.h" //Librairie gérant 2 PIDs
 #include "sequencement.h"
+#include "obstacle.h"
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
@@ -96,6 +97,7 @@ void setup() {
   pid_.enable();
 }
 
+
 /* Boucle principale (infinie)*/
 void loop() {
 
@@ -115,9 +117,33 @@ void loop() {
   // mise à jour du PID
   //pid_.run();
 
-
   pinMode(MAGPIN,OUTPUT);
   
+
+  //********************************TESTS**************************************
+
+   switch (2)
+  {
+  case 1:         //T*************TESTS Obstacle************************
+      Obstacle Sapin1;
+
+  Sapin1.setdistance(32);
+  Sapin1.setdistance_init(10);
+  Sapin1.sethauteur(17);
+  Sapin1.sethauteur_init(28);
+  Serial.println(Sapin1.getdistance());
+  Serial.println(Sapin1.gethauteur());
+    break;
+  
+  default:
+            Serial.println("Erreur");  
+    break; 
+    
+  }
+ 
+
+
+
 }
 
 /*---------------------------Definition de fonctions ------------------------*/

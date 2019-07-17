@@ -5,13 +5,15 @@ Class to control the obstacles
 @version 1.0 07/17/2019
 */
 
+#ifndef Obstacle_H_
+#define Obstacle_H_
+
 #include <Arduino.h>
 
 class Obstacle
 {
   public:
-    obstacle();
-    ~obstacle();
+    Obstacle();
     void setdistance_init(float distance_init);
     void setdistance(float distance);
     void sethauteur_init(float hauteur_init);
