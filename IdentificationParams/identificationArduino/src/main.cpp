@@ -112,7 +112,6 @@ void loop() {
   // mise a jour des chronometres
   timerSendMsg_.update();
   timerPulse_.update();
-  biuygky
   // mise à jour du PID
   //pid_.run();
 
