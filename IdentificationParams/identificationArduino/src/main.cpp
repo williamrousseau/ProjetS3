@@ -45,7 +45,6 @@ float Gxyz[3];                      // tableau pour giroscope
 float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
-const double pi = 3.14159265359;
 const double WheelR = 0.025;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
@@ -83,7 +82,7 @@ void setup() {
   timerPulse_.setCallback(endPulse);
   
   // Initialisation du PID 1
-  pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
+  pid_.setGains(5, 0 ,0.0001,       10, 0, 1);       //gains bidons
   pid_.setWeight(1, 0);                       //pondérations bidons
   //pid_.setWeight(1-0.025,0.025);
     // Attache des fonctions de retour
@@ -92,7 +91,7 @@ void setup() {
     pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
   pid_.setPeriod(10);
-  pid_.setGoal(0.010,0);
+  pid_.setGoal(2,0);
   pid_.enable();
 }
 
@@ -171,6 +170,8 @@ void sendMsg(){
   doc["isGoal1"] = pid_.isAtGoal1();
   doc["isGoal2"] = pid_.isAtGoal2();
 
+  //doc[""]
+
   // Serialisation
   serializeJson(doc, Serial);
   // Envoit
@@ -214,8 +215,8 @@ void readMsg(){
 
 // Fonctions pour le PID
 double PIDmeasurement1(){ //Position du chariot
-  double position1 = AX_.readEncoder(1)*kgear*WheelR*pi*2/3200;
-  double position2 = AX_.readEncoder(2)*kgear*WheelR*pi*2/3200;
+  double position1 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
+  double position2 = AX_.readEncoder(2)*kgear*WheelR*PI*2/3200;
   double position = (position1 + position2)/2;
   return position;
 }
