@@ -10,4 +10,20 @@ Class to control a PID
 
 #include <Arduino.h>
 
+class sequencement
+{
+  public:
+          sequencement();
+          void osciller();
+          void Prise();
+          void obstacle();
+          void depot();
+
+  private:
+
+
+};
+
+
+
 #endif
