@@ -5,12 +5,12 @@ Class to control a PID
 @version 1.0 23/04/2019
 */
 
-#ifndef sequencement_H_
-#define sequencement_H_
+#ifndef oscillation_H_
+#define oscillation_H_
 
 #include <Arduino.h>
 
-class sequencement
+class oscillation
 {
   public:
     sequencement();

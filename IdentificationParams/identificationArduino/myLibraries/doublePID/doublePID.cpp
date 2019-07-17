@@ -19,7 +19,7 @@ doublePID::doublePID(double kp1, double ki1, double kd1, double kp2, double ki2,
 void doublePID::enable(){
 
     // if function pointers are initiated
-    if(measurementFunc_1!=nullptr && commandFunc_!=nullptr){
+    if(measurementFunc_1!=nullptr && measurementFunc_2!=nullptr && commandFunc_!=nullptr){
         enable_1 = true;
         enable_2 = true;
         measureTime_ = millis() + dtMs_;

@@ -8,7 +8,7 @@ Class to control a PID
 #include <Arduino.h>
 #include "sequencement.h"
 
-sequencement::sequencement()
+oscillation::oscillation()
 {
     tailleAngle = 0;
     capaciteAngle = 10;
@@ -19,12 +19,12 @@ sequencement::sequencement()
     tableauMoyenne = new float [capaciteMoyenne];
 }
 
-void sequencement::enable()
+void oscillation::enable()
 {
     measureTime = millis() + dtMs;
 }
 
-float sequencement::commandeOscillation(int angle, float commandePrec)
+float oscillation::commandeOscillation(int angle, float commandePrec)
 {
     double commande = commandePrec;
     if (vitesseAngulaire(angle) < epsilon && vitesseAngulaire(angle) > -1*epsilon)
@@ -41,7 +41,7 @@ float sequencement::commandeOscillation(int angle, float commandePrec)
     return commande;
 }
 
-float sequencement::vitesseAngulaire(int angle)
+float oscillation::vitesseAngulaire(int angle)
 {
     if (millis() >= measureTime)
     {
