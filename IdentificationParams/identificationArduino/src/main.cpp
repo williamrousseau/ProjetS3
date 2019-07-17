@@ -83,17 +83,19 @@ void setup() {
   // Chronometre duration pulse
   timerPulse_.setCallback(endPulse);
   
-  // Initialisation du PID 1
-  pid_.setGains(5, 0 ,0.0001);       //gains bidons
-  //pid_.setWeight(1-0.025,0.025);
+  // Initialisation du PID 
+  //pid_.setGains(5, 0 ,0.0001);       //gains bidons cart
+  pid_.setGains(10, 0, 1);       //gains bidons pendule
     // Attache des fonctions de retour
-    pid_.setMeasurementFunc(PIDcartpos);
+    pid_.setMeasurementFunc(PIDpendulum);
     pid_.setCommandFunc(PIDcommand);
     pid_.setAtGoalFunc(PIDgoalReached);
-  pid_.setEpsilon(0.005);                 //tolerances bidons
+  pid_.setEpsilon(4);                 //tolerances bidons
   pid_.setIntegralLim(100);
   pid_.setPeriod(50);
-  pid_.setGoal(-0.5);
+  //pid_.setGoal(-0.5);
+  int initialAngle = analogRead(POTPIN);
+  pid_.setGoal(initialAngle);
   //pid_.enable();
 }
 
@@ -226,17 +228,17 @@ double PIDpendulum(){ //Position du chariot
 /* Dépend des enables de PID
 Sortie dépendante des deux PIDS */
 void PIDcommand(double cmd_){
-  AX_.setMotorPWM(0, cmd_);
-  AX_.setMotorPWM(1, cmd_);
-  cmd = cmd_;
+  AX_.setMotorPWM(0, cmd_/3000);
+  AX_.setMotorPWM(1, cmd_/3000);
+  cmd = cmd_/3000;
 }
 void PIDgoalReached(){
-  pid_.disable();
-  AX_.setMotorPWM(0, 0);
+  //pid_.disable();
+ /* AX_.setMotorPWM(0, 0);
   AX_.setMotorPWM(1, 0);
   delay(4000);
   pid_.setGoal(0);
-  pid_.enable();
+  pid_.enable();*/
 }
 
 /*void PIDgoalReached(){
