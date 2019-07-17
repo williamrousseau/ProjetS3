@@ -14,7 +14,7 @@
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
-#define UPDATE_PERIODE  500         // Periode (ms) d'envoie d'etat general
+#define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
 
 #define MAGPIN           8          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
@@ -83,7 +83,10 @@ void setup() {
 
   // Chronometre duration pulse
   timerPulse_.setCallback(endPulse);
-  
+
+  //electroaimant
+  pinMode(MAGPIN,OUTPUT);
+
   // Initialisation du PID 1
   pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
   pid_.setWeight(1, 0);                       //pondérations bidons
@@ -93,7 +96,7 @@ void setup() {
     pid_.setCommandFunc(PIDcommand);
     pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
-  pid_.setPeriod(10);
+  pid_.setPeriod(200);
   pid_.setGoal(2,0);
   pid_.enable();
 }
@@ -118,7 +121,7 @@ void loop() {
   // mise à jour du PID
   //pid_.run();
 
-  pinMode(MAGPIN,OUTPUT);
+  digitalWrite(MAGPIN,HIGH);
   
 
   //********************************TESTS**************************************
@@ -175,24 +178,24 @@ void sendMsg(){
 
   doc["time"] = millis();
   doc["potentiometre"] = analogRead(POTPIN);
-  doc["encVex"] = vexEncoder_.getCount();
+  /* doc["encVex"] = vexEncoder_.getCount();
   doc["goal1"] = pid_.getGoal1();
   doc["goal2"] = pid_.getGoal2();
-  doc["motorPos"] = PIDmeasurement1();
+  doc["motorPos"] = PIDmeasurement1();*/
   doc["pendulumPos"] = PIDmeasurement2();
   doc["voltage"] = AX_.getVoltage();
   doc["current"] = AX_.getCurrent(); 
-  doc["pulsePWM"] = pulsePWM_;
+  /*doc["pulsePWM"] = pulsePWM_;
   doc["pulseTime"] = pulseTime_;
-  doc["inPulse"] = isInPulse_;
+  doc["inPulse"] = isInPulse_;*/
 //  doc["accelX"] = imu_.getAccelX();
 //  doc["accelY"] = imu_.getAccelY();
 //  doc["accelZ"] = imu_.getAccelZ();
 //  doc["gyroX"] = imu_.getGyroX();
 //  doc["gyroY"] = imu_.getGyroY();
 //  doc["gyroZ"] = imu_.getGyroZ();
-  doc["isGoal1"] = pid_.isAtGoal1();
-  doc["isGoal2"] = pid_.isAtGoal2();
+  //doc["isGoal1"] = pid_.isAtGoal1();
+  //doc["isGoal2"] = pid_.isAtGoal2();
 
   //doc[""]
 
