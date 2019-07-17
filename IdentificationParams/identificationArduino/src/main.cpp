@@ -48,6 +48,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double WheelR = 0.025;
+Obstacle Sapin1;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -122,10 +123,9 @@ void loop() {
 
   //********************************TESTS**************************************
 
-   switch (2)
+   switch (1)
   {
   case 1:         //T*************TESTS Obstacle************************
-      Obstacle Sapin1;
 
   Sapin1.setdistance(32);
   Sapin1.setdistance_init(10);
