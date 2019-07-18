@@ -15,7 +15,7 @@ class oscillation
 {
   public:
     oscillation();
-    float commandeOscillation(double angle);
+    void commandeOscillation(double angle);
 
     void setMeasurementFunc(double (*f)()){measurementFunc = f;};
     void setCommandFunc(void (*f)(double)){commandFunc = f;};
@@ -44,5 +44,6 @@ class oscillation
     int difference;
     int currentDifference;
     int sens;
+    bool startUp;
 };
 #endif

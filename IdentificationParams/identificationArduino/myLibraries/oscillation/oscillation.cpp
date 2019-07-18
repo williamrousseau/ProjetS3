@@ -25,6 +25,8 @@ oscillation::oscillation()
     angleZero = 0;
     currentDifference = 0;
     sens = 0;
+    difference = 0;
+    startUp = 1;
 }
 
 void oscillation::enable()
@@ -54,12 +56,33 @@ void oscillation::run()
     }
 }
 
-float oscillation::commandeOscillation(double angle)
+void oscillation::commandeOscillation(double angle)
 {
     float commande = 0;
     vitesseAngulaire(angle);
     Serial.println("Je suis dans comandeOscillation");
-    if (omega > 0)
+    if (startUp == 1)
+    {
+        sens = 1;
+        difference = fabs(angle - angleZero);
+        startUp = 0;
+        commande = 0.5;
+        commandFunc(commande);
+
+    }
+    
+    else if (omega < 0 || startUp == 1)
+    {
+        if(sens == -1)
+        {   
+            difference = fabs(angle - angleZero);
+        }
+        sens = 1;
+        currentDifference = fabs(angle - angleZero);
+        commande = (difference - currentDifference)/difference;
+        commandFunc(commande); 
+    }
+    else 
     {
         if(sens == 1)
         {
@@ -70,18 +93,6 @@ float oscillation::commandeOscillation(double angle)
         commande = -(difference - currentDifference)/difference;
         commandFunc(commande); 
     }
-    else
-    {
-        if(sens == -1)
-        {
-            difference = fabs(angle - angleZero);
-        }
-        sens = 1;
-        currentDifference = fabs(angle - angleZero);
-        commande = (difference - currentDifference)/difference;
-        commandFunc(commande); 
-    }
-    return commande;
 }
 
 void oscillation::vitesseAngulaire(double angle)
