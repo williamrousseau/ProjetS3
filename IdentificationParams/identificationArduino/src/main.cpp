@@ -9,12 +9,9 @@
 #include <LibS3GRO.h>
 #include <ArduinoJson.h>
 #include "doublePID.h" //Librairie gérant 2 PIDs
-<<<<<<< HEAD
 #include "oscillation.h" 
-=======
 #include "sequencement.h"
 #include "obstacle.h"
->>>>>>> f92e3050e5baf3a0a93377d5991c8cea2306fe6c
 /*------------------------------ Constantes ---------------------------------*/
 
 #define BAUD            115200      // Frequence de transmission serielle
@@ -53,11 +50,8 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double WheelR = 0.025;
-<<<<<<< HEAD
 int inc = 0;
-=======
 Obstacle Sapin1;
->>>>>>> f92e3050e5baf3a0a93377d5991c8cea2306fe6c
 
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -93,14 +87,9 @@ void setup() {
   // Chronometre duration pulse
   timerPulse_.setCallback(endPulse);
 
-<<<<<<< HEAD
-  pinMode(MAGPIN, OUTPUT);
-  
-=======
   //electroaimant
   pinMode(MAGPIN,OUTPUT);
 
->>>>>>> f92e3050e5baf3a0a93377d5991c8cea2306fe6c
   // Initialisation du PID 1
   pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
   pid_.setWeight(1, 0);                       //pondérations bidons
@@ -149,8 +138,6 @@ void loop() {
   }
 
   digitalWrite(MAGPIN,HIGH);
-<<<<<<< HEAD
-=======
   
 
   //********************************TESTS**************************************
@@ -166,7 +153,6 @@ void loop() {
   Serial.println(Sapin1.getdistance());
   Serial.println(Sapin1.gethauteur());
     break;
->>>>>>> f92e3050e5baf3a0a93377d5991c8cea2306fe6c
   
   default:
             Serial.println("Erreur");  
@@ -208,34 +194,11 @@ void sendMsg(){
 
   doc["time"] = millis();
   doc["potentiometre"] = analogRead(POTPIN);
-<<<<<<< HEAD
   doc["motorPos"] = PIDmeasurement1();
   doc["pendulumPos"] = PIDmeasurement2();
   doc["voltage"] = AX_.getVoltage();
   doc["current"] = AX_.getCurrent(); 
 
-=======
-  /* doc["encVex"] = vexEncoder_.getCount();
-  doc["goal1"] = pid_.getGoal1();
-  doc["goal2"] = pid_.getGoal2();
-  doc["motorPos"] = PIDmeasurement1();*/
-  doc["pendulumPos"] = PIDmeasurement2();
-  doc["voltage"] = AX_.getVoltage();
-  doc["current"] = AX_.getCurrent(); 
-  /*doc["pulsePWM"] = pulsePWM_;
-  doc["pulseTime"] = pulseTime_;
-  doc["inPulse"] = isInPulse_;*/
-//  doc["accelX"] = imu_.getAccelX();
-//  doc["accelY"] = imu_.getAccelY();
-//  doc["accelZ"] = imu_.getAccelZ();
-//  doc["gyroX"] = imu_.getGyroX();
-//  doc["gyroY"] = imu_.getGyroY();
-//  doc["gyroZ"] = imu_.getGyroZ();
-  //doc["isGoal1"] = pid_.isAtGoal1();
-  //doc["isGoal2"] = pid_.isAtGoal2();
-
-  //doc[""]
->>>>>>> f92e3050e5baf3a0a93377d5991c8cea2306fe6c
 
   // Serialisation
   serializeJson(doc, Serial);
