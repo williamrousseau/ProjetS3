@@ -50,7 +50,7 @@ float Mxyz[3];                      // tableau pour magnetometre
 
 const double kgear = 2;
 const double WheelR = 0.025;
-int inc = 0;
+unsigned long timeout;
 Obstacle Sapin1;
 
 /*------------------------- Prototypes de fonctions -------------------------*/
@@ -105,6 +105,7 @@ void setup() {
   oscille.setCommandFunc(PIDcommand);
   oscille.setMeasurementFunc(PIDmeasurement2);
   oscille.enable();
+  timeout = millis() + 10000;
 }
 
 
@@ -126,18 +127,18 @@ void loop() {
   timerPulse_.update();
   // mise à jour du PID
   //pid_.run();
-  while(inc < 2000)
+  
+  if(millis() < timeout)
   {
     oscille.run();
-    inc++;
   }
-  while(inc >= 2000)
+  if(millis() > timeout)
   {
     AX_.setMotorPWM(0, 0);
     AX_.setMotorPWM(1, 0);
   }
 
-  digitalWrite(MAGPIN,HIGH);
+  //digitalWrite(MAGPIN,HIGH);
   
 
   //********************************TESTS**************************************

@@ -60,7 +60,6 @@ void oscillation::commandeOscillation(double angle)
 {
     float commande = 0;
     vitesseAngulaire(angle);
-    Serial.println("Je suis dans comandeOscillation");
     if (startUp == 1)
     {
         sens = 1;
@@ -71,7 +70,7 @@ void oscillation::commandeOscillation(double angle)
 
     }
     
-    else if (omega < 0 || startUp == 1)
+    else if (omega < 0)
     {
         if(sens == -1)
         {   
