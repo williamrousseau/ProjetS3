@@ -18,7 +18,7 @@
 #define BAUD            115200      // Frequence de transmission serielle
 #define UPDATE_PERIODE  200         // Periode (ms) d'envoie d'etat general
 
-#define MAGPIN           8          // Port numerique pour electroaimant
+#define MAGPIN          32          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
 
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
@@ -120,9 +120,12 @@ void setup() {
 
 /* Boucle principale (infinie)*/
 void loop() {
-  
-   if(shouldRead_){
-    readMsg();
+
+
+  digitalWrite(MAGPIN, HIGH);
+
+  if(shouldRead_){
+  readMsg();
   }
   if(shouldSend_){
     sendMsg();

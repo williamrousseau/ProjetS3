@@ -14,25 +14,22 @@ oscillation::oscillation()
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
-    dtMs_ = 1; //période de 1 ms
-    epsilon = 1;
+    dtMs_ = 10; //période de 1 ms
     enabled = 0;
     lastCommand = 0;
     j = 0;
     anglePrec = 0;
-    angleZero = 0;
-    currentDifference = 0;
     sens = 0;
     angleMax = 0;
     startUp = 1;
+    topAngle = 0;
+    belowAngle = 0;
 }
 
 void oscillation::enable()
 {
     measureTime_[0] = millis() + dtMs_;
     enabled = 1;
-    angleZero = measurementFunc();
-    Serial.println("enabled");
 }
 
 void oscillation::run()
@@ -59,39 +56,82 @@ void oscillation::commandeOscillation(double angle)
     vitesseAngulaire(angle);
     if (startUp == 1)
     {
-        sens = 1;
-        angleMax = abs(angle - angleZero);
         startUp = 0;
         commande = 0.5;
         commandFunc(commande);
-
     }
     
     else if (omega < 0)
     {
-        Serial.println("--------------");
+        Serial.println(angle);
         if(sens == -1)
         {   
-            angleMax = abs(angle - angleZero);
+            angleMax = abs(angle);
+            topAngle = angleMax*2/3;
+            belowAngle = -angleMax/2;
+            if (topAngle < 15) topAngle = 15;
+            if (belowAngle > -10) belowAngle = -10;
         }
         sens = 1;
-        currentDifference = abs(angle - angleZero);
-        if (currentDifference )
-        commande = (angleMax - currentDifference)/angleMax;
-        commandFunc(commande); 
-    }
-    else 
-    {
-        Serial.println("OOOOOOOOOOOO");
-        if(sens == 1)
+        if(angle < topAngle && angle > belowAngle)
+        {   
+            if (angle >= 0)
+            {
+                commande = 2*(topAngle-angle)/topAngle;
+            }
+            else if (angle < 0)
+            {
+                commande = 2*(belowAngle-angle)/belowAngle;
+            }
+            if (commande>1)
+            {
+                commande = 1;
+            }
+            commandFunc(commande);
+        }
+        else
         {
-            angleMax = abs(angle - angleZero);
+            commandFunc(0);
+        }
+    }
+    else if (omega > 0)
+    {
+        Serial.println(angle);
+        if(sens == 1)
+        {   
+            angleMax = angle;
+            topAngle = angleMax/2;
+            belowAngle = -angleMax*2/3;
+            if (topAngle > -15) topAngle = -15;
+            if (belowAngle < 10) belowAngle = 10;
         }
         sens = -1;
-        currentDifference = abs(angle - angleZero);
-        commande = -(angleMax - currentDifference)/angleMax;
-        commandFunc(commande); 
+        if(angle > topAngle && angle < belowAngle)
+        {
+            if (angle <= 0)
+            {
+                commande = -2*(topAngle-angle)/topAngle;
+            }
+            else if (angle > 0)
+            {
+                commande = -2*(belowAngle-angle)/belowAngle;
+            }
+            if (commande<-1)
+            {
+                commande = -1;
+            }
+            commandFunc(commande);
+        }
+        else
+        {
+            commandFunc(0);
+        }
     }
+    else
+    {
+        commandFunc(commande);
+    }
+    
 }
 
 void oscillation::vitesseAngulaire(double angle)
