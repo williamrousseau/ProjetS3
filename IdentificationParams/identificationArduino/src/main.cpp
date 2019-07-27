@@ -139,8 +139,7 @@ void loop() {
   
   if(millis() < timeout)
   {
-    //oscille.run();
-    PIDcommand(0.5);
+    oscille.run();
   }
   if(millis() > timeout)
   {
