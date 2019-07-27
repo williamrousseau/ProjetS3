@@ -121,13 +121,13 @@ void setup() {
 /* Boucle principale (infinie)*/
 void loop() {
   
-  /* if(shouldRead_){
+   if(shouldRead_){
     readMsg();
   }
   if(shouldSend_){
     sendMsg();
   }
-  if(shouldPulse_){
+  /* if(shouldPulse_){
     startPulse();
   }*/
 
@@ -286,8 +286,7 @@ double PIDmeasurement1(){ //Position du chariot
   return position;
 }
 double PIDmeasurement2(){ //Position du pendule
-  Serial.println(vexEncoder_.getCount());
-  return vexEncoder_.getCount();;
+  return vexEncoder_.getCount()*2;
 }
 
 /* Dépend des enables de PID

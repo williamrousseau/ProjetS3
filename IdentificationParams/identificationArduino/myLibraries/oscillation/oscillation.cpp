@@ -14,7 +14,7 @@ oscillation::oscillation()
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
-    dtMs_ = 5; //période de 1 ms
+    dtMs_ = 1; //période de 1 ms
     epsilon = 1;
     enabled = 0;
     lastCommand = 0;
@@ -69,6 +69,7 @@ void oscillation::commandeOscillation(double angle)
     
     else if (omega < 0)
     {
+        Serial.println("--------------");
         if(sens == -1)
         {   
             angleMax = abs(angle - angleZero);
@@ -81,6 +82,7 @@ void oscillation::commandeOscillation(double angle)
     }
     else 
     {
+        Serial.println("OOOOOOOOOOOO");
         if(sens == 1)
         {
             angleMax = abs(angle - angleZero);
