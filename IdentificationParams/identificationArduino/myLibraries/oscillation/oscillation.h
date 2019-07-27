@@ -17,12 +17,14 @@ class oscillation
     oscillation();
     void commandeOscillation(double angle);
 
-    void setMeasurementFunc(double (*f)()){measurementFunc = f;};
+    void setMeasurementFunc1(double (*f)()){measurementFunc1 = f;};
+    void setMeasurementFunc2(double (*f)()){measurementFunc2 = f;};
     void setCommandFunc(void (*f)(double)){commandFunc = f;};
 
     void enable();
     void vitesseAngulaire(double angle);
     void run();
+    void setMaxPos(double posSapin);
 
 
   private:
@@ -36,12 +38,16 @@ class oscillation
     unsigned long dtMs_; // Periode entre les commandes
     bool enabled;
     float lastCommand;
-    double (*measurementFunc)() = nullptr; // Measurement function
+    double (*measurementFunc1)() = nullptr; // Measurement function
+    double (*measurementFunc2)() = nullptr; // Measurement function
     void (*commandFunc)(double) = nullptr; // Command function
-    int angleMax;
+    int angleMin;
+    float pointeActivite;
     int sens;
     int topAngle;
     int belowAngle;
+    double maxPos;
     bool startUp;
+    float Accel;
 };
 #endif

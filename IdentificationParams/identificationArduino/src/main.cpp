@@ -24,6 +24,10 @@
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
 #define RAPPORTVITESSE  50          // Rapport de vitesse du moteur
 
+#define OSCILLATION     1           // Variable d'etat pour le cas d'oscillement du sequencement
+#define GOGOGO          2           // Variable d'etat pour le cas d'acceleration du sequencement
+#define GOGETMOREBREAD  3           // Variable d'etat pour le cas de retour du sequencement
+
 /*---------------------------- variables globales ---------------------------*/
 
 ArduinoX AX_;                       // objet arduinoX
@@ -58,15 +62,14 @@ int nb_obstacle_;
 double energy_;
 bool magnet_on_;
 bool test_mode_, comp_mode_;
+bool readyTOchange_;
+int etat_;
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
-void startPulse();
-void endPulse();
 void sendMsg(); 
 void readMsg();
 void serialEvent();
-double get_energy();
 
 // Fonctions pour le PID
 double PIDmeasurement1();
@@ -75,11 +78,14 @@ void PIDcommand(double cmd);
 void PIDgoalReached1();
 void PIDgoalReached2();
 
+// Nos fonctions ajoutees
+double get_energy();
+void manage_state(bool run_);
+
 /*---------------------------- fonctions "Main" -----------------------------*/
 
 void setup() {
   Serial.begin(BAUD);               // initialisation de la communication serielle
-  Serial.println("ALLO");
     AX_.init();                       // initialisation de la carte ArduinoX 
   imu_.init();                      // initialisation de la centrale inertielle
   vexEncoder_.init(2,3);            // initialisation de l'encodeur VEX
@@ -91,11 +97,9 @@ void setup() {
   timerSendMsg_.setCallback(timerCallback);
   timerSendMsg_.enable();
 
-  // Chronometre duration pulse
-  timerPulse_.setCallback(endPulse);
-
   //electroaimant
   pinMode(MAGPIN,OUTPUT);
+  digitalWrite(MAGPIN,HIGH);
 
   // Initialisation du PID 1
   pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
@@ -109,12 +113,15 @@ void setup() {
   pid_.setPeriod(200);
   pid_.setGoal(2,0);
   pid_.enable();
-  Serial.println("avant");
   oscille.setCommandFunc(PIDcommand);
-  Serial.println("apres");
-  oscille.setMeasurementFunc(PIDmeasurement2);
+  oscille.setMeasurementFunc1(PIDmeasurement2);
+  oscille.setMeasurementFunc2(PIDmeasurement1);
   oscille.enable();
-  timeout = millis() + 100000;
+
+  // Initialisation des variables
+  readyTOchange_ = false;
+  etat_ = 0;
+  run_ = false;
 }
 
 
@@ -122,25 +129,63 @@ void setup() {
 void loop() {
 
 
-  digitalWrite(MAGPIN, HIGH);
+  //digitalWrite(MAGPIN, HIGH);
 
   if(shouldRead_){
-  readMsg();
+    readMsg();
   }
   if(shouldSend_){
     sendMsg();
   }
-  /* if(shouldPulse_){
-    startPulse();
-  }*/
 
   // mise a jour des chronometres
-  timerSendMsg_.update();
-  timerPulse_.update();
+  
   // mise à jour du PID
   //pid_.run();
-  
-  if(millis() < timeout)
+
+  if(etat_ == OSCILLATION && readyTOchange_){
+    etat_ = GOGOGO;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == GOGOGO && readyTOchange_){
+    etat_ = GOGETMOREBREAD;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == GOGETMOREBREAD && readyTOchange_){
+    etat_ = 0;
+    readyTOchange_ = false;
+    run_ = false;
+  }
+
+  if (run_)
+  {
+    switch (etat_)
+    {
+    case OSCILLATION:      
+      oscille.run();
+      if (PIDmeasurement2() > 120)
+      {
+        readyTOchange_ = true;
+      }         
+      break;
+    
+    case GOGOGO:
+      
+      break;
+
+    case GOGETMOREBREAD:
+      
+      break;
+    }
+  }
+  timerSendMsg_.update();
+  timerPulse_.update();
+
+  /*if(millis() < timeout)
   {
     oscille.run();
   }
@@ -148,9 +193,8 @@ void loop() {
   {
     AX_.setMotorPWM(0, 0);
     AX_.setMotorPWM(1, 0);
-  }
+  }*/
 
-  //digitalWrite(MAGPIN,HIGH);
   
 
   //********************************TESTS**************************************
@@ -181,33 +225,11 @@ void serialEvent(){shouldRead_ = true;}
 
 void timerCallback(){shouldSend_ = true;}
 
-void startPulse(){
-  /* Demarrage d'un pulse */
-  timerPulse_.setDelay(pulseTime_);
-  timerPulse_.enable();
-  timerPulse_.setRepetition(1);
-  AX_.setMotorPWM(0, pulsePWM_);
-  AX_.setMotorPWM(1, pulsePWM_);
-  shouldPulse_ = false;
-  isInPulse_ = true;
-}
-
-void endPulse(){
-  /* Rappel du chronometre */
-  AX_.setMotorPWM(0,0);
-  AX_.setMotorPWM(1,0);
-  timerPulse_.disable();
-  isInPulse_ = false;
-}
-
-
 void sendMsg(){
   /* Envoit du message Json sur le port seriel */
   StaticJsonDocument<500> doc;
   // Elements du message
-
   doc["Time"] = millis();
-  doc["Potentiometre"] = analogRead(POTPIN);
   doc["In_run"] = run_;
   doc["Magnet_on"] = magnet_on_;
   doc["Nb_obstacle"] = nb_obstacle_;
@@ -217,6 +239,9 @@ void sendMsg(){
   doc["Energy (Ws)"] = get_energy(); 
   doc["Test_mode"] = test_mode_;
   doc["Competition_mode"] = comp_mode_;
+  doc["Position"] = PIDmeasurement1();
+  doc["Etat"] = etat_;
+  doc["Angle"] = PIDmeasurement2();
 
 
   // Serialisation
@@ -229,6 +254,17 @@ void sendMsg(){
 double get_energy(){
   energy_ = energy_ + (AX_.getVoltage() * AX_.getCurrent() * UPDATE_PERIODE/1000);
   return energy_;
+}
+
+void manage_state(bool run_){
+  if (run_)
+  {
+    etat_ = OSCILLATION;
+  }
+  if (!run_)
+  {
+    etat_ = 0;
+  }
 }
 
 void readMsg(){
@@ -248,15 +284,6 @@ void readMsg(){
   }
   
   // Analyse des éléments du message message
-  /*parse_msg = doc["pulsePWM"];
-  if(!parse_msg.isNull()){
-     pulsePWM_ = doc["pulsePWM"].as<float>();
-  }
-
-  parse_msg = doc["pulseTime"];
-  if(!parse_msg.isNull()){
-     pulseTime_ = doc["pulseTime"].as<float>();
-  }*/
 
   parse_msg = doc["Nb_obstacle"];
   if(!parse_msg.isNull()){
@@ -265,6 +292,7 @@ void readMsg(){
   parse_msg = doc["In_run"];
   if(!parse_msg.isNull()){
     run_ = doc["In_run"];
+    manage_state(run_);
   }
   parse_msg = doc["Magnet_on"];
   if(!parse_msg.isNull()){
@@ -283,13 +311,13 @@ void readMsg(){
 
 // Fonctions pour le PID
 double PIDmeasurement1(){ //Position du chariot
-  double position1 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
-  double position2 = AX_.readEncoder(2)*kgear*WheelR*PI*2/3200;
+  double position1 = AX_.readEncoder(0)*kgear*WheelR*PI*2/3200;
+  double position2 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
   double position = (position1 + position2)/2;
   return position;
 }
 double PIDmeasurement2(){ //Position du pendule
-  return vexEncoder_.getCount()*2;
+  return vexEncoder_.getCount()*4;
 }
 
 /* Dépend des enables de PID

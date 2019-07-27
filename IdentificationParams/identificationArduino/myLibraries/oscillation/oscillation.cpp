@@ -11,6 +11,9 @@ Class to control a PID
 
 oscillation::oscillation()
 {
+    pointeActivite = 3/4;        //PARAMS
+    Accel = 1.5;                 //À
+    angleMin = 50;               //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
@@ -20,10 +23,11 @@ oscillation::oscillation()
     j = 0;
     anglePrec = 0;
     sens = 0;
-    angleMax = 0;
     startUp = 1;
     topAngle = 0;
     belowAngle = 0;
+    maxPos = 0;
+    
 }
 
 void oscillation::enable()
@@ -33,19 +37,13 @@ void oscillation::enable()
 }
 
 void oscillation::run()
-{
-    //Serial.println("millis:");
-    //Serial.println(millis());
-    //Serial.println("measureTime_");
-    //Serial.println(measureTime_[0]);
-   
+{   
     if (millis() >= measureTime_[0])
     {
-        //Serial.println("millis >= measureTime_");
         measureTime_[0] = millis() + dtMs_;
         if (enabled)
         {
-            commandeOscillation(measurementFunc());
+            commandeOscillation(measurementFunc1());
         }
     }
 }
@@ -66,22 +64,25 @@ void oscillation::commandeOscillation(double angle)
         Serial.println(angle);
         if(sens == -1)
         {   
-            angleMax = abs(angle);
-            topAngle = angleMax*2/3;
-            belowAngle = -angleMax/2;
-            if (topAngle < 15) topAngle = 15;
-            if (belowAngle > -10) belowAngle = -10;
+            topAngle = abs(angle)*pointeActivite;
+            belowAngle = -abs(angle)*pointeActivite;
+            if (topAngle < angleMin) topAngle = angleMin;
+            if (belowAngle > -angleMin) belowAngle = -angleMin;
         }
         sens = 1;
         if(angle < topAngle && angle > belowAngle)
         {   
-            if (angle >= 0)
+            if (measurementFunc2() > maxPos)
             {
-                commande = 2*(topAngle-angle)/topAngle;
+                commande = 0;
+            }
+            else if (angle >= 0)
+            {
+                commande = Accel*(topAngle-angle)/topAngle*1.5;
             }
             else if (angle < 0)
             {
-                commande = 2*(belowAngle-angle)/belowAngle;
+                commande = Accel*(belowAngle-angle)/belowAngle;
             }
             if (commande>1)
             {
@@ -96,25 +97,23 @@ void oscillation::commandeOscillation(double angle)
     }
     else if (omega > 0)
     {
-        Serial.println(angle);
         if(sens == 1)
         {   
-            angleMax = angle;
-            topAngle = angleMax/2;
-            belowAngle = -angleMax*2/3;
-            if (topAngle > -15) topAngle = -15;
-            if (belowAngle < 10) belowAngle = 10;
+            topAngle = angle*pointeActivite;
+            belowAngle = -angle*pointeActivite;
+            if (topAngle > -angleMin) topAngle = -angleMin;
+            if (belowAngle < angleMin) belowAngle = angleMin;
         }
         sens = -1;
         if(angle > topAngle && angle < belowAngle)
         {
             if (angle <= 0)
             {
-                commande = -2*(topAngle-angle)/topAngle;
+                commande = -Accel*(topAngle-angle)/topAngle*1.5;
             }
             else if (angle > 0)
             {
-                commande = -2*(belowAngle-angle)/belowAngle;
+                commande = -Accel*(belowAngle-angle)/belowAngle;
             }
             if (commande<-1)
             {
@@ -159,7 +158,9 @@ void oscillation::vitesseAngulaire(double angle)
         j++;
         anglePrec = angleLive;
     }
-    
-    /*Serial.println("omega");
-    Serial.println(omega);*/
+}
+
+void oscillation::setMaxPos(double posSapin)
+{
+    maxPos = posSapin-0.1;
 }
