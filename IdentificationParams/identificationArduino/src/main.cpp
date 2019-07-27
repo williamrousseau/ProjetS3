@@ -53,7 +53,11 @@ const double kgear = 2;
 const double WheelR = 0.025;
 unsigned long timeout;
 Obstacle Sapin1;
-
+bool run_;
+int nb_obstacle_;
+double energy_;
+bool magnet_on_;
+bool test_mode_, comp_mode_;
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
@@ -62,6 +66,7 @@ void endPulse();
 void sendMsg(); 
 void readMsg();
 void serialEvent();
+double get_energy();
 
 // Fonctions pour le PID
 double PIDmeasurement1();
@@ -74,7 +79,8 @@ void PIDgoalReached2();
 
 void setup() {
   Serial.begin(BAUD);               // initialisation de la communication serielle
-  AX_.init();                       // initialisation de la carte ArduinoX 
+  Serial.println("ALLO");
+    AX_.init();                       // initialisation de la carte ArduinoX 
   imu_.init();                      // initialisation de la centrale inertielle
   vexEncoder_.init(2,3);            // initialisation de l'encodeur VEX
   // attache de l'interruption pour encodeur vex
@@ -103,16 +109,18 @@ void setup() {
   pid_.setPeriod(200);
   pid_.setGoal(2,0);
   pid_.enable();
+  Serial.println("avant");
   oscille.setCommandFunc(PIDcommand);
+  Serial.println("apres");
   oscille.setMeasurementFunc(PIDmeasurement2);
   oscille.enable();
-  timeout = millis() + 10000;
+  timeout = millis() + 100000;
 }
 
 
 /* Boucle principale (infinie)*/
 void loop() {
-
+  
   /* if(shouldRead_){
     readMsg();
   }
@@ -131,7 +139,8 @@ void loop() {
   
   if(millis() < timeout)
   {
-    oscille.run();
+    //oscille.run();
+    PIDcommand(0.5);
   }
   if(millis() > timeout)
   {
@@ -189,17 +198,23 @@ void endPulse(){
   isInPulse_ = false;
 }
 
+
 void sendMsg(){
   /* Envoit du message Json sur le port seriel */
   StaticJsonDocument<500> doc;
   // Elements du message
 
-  doc["time"] = millis();
-  doc["potentiometre"] = analogRead(POTPIN);
-  doc["motorPos"] = PIDmeasurement1();
-  doc["pendulumPos"] = PIDmeasurement2();
-  doc["voltage"] = AX_.getVoltage();
-  doc["current"] = AX_.getCurrent(); 
+  doc["Time"] = millis();
+  doc["Potentiometre"] = analogRead(POTPIN);
+  doc["In_run"] = run_;
+  doc["Magnet_on"] = magnet_on_;
+  doc["Nb_obstacle"] = nb_obstacle_;
+  doc["Voltage"] = AX_.getVoltage();
+  doc["Current"] = AX_.getCurrent(); 
+  doc["Power"] = AX_.getVoltage() * AX_.getCurrent();
+  doc["Energy (Ws)"] = get_energy(); 
+  doc["Test_mode"] = test_mode_;
+  doc["Competition_mode"] = comp_mode_;
 
 
   // Serialisation
@@ -207,6 +222,11 @@ void sendMsg(){
   // Envoit
   Serial.println();
   shouldSend_ = false;
+}
+
+double get_energy(){
+  energy_ = energy_ + (AX_.getVoltage() * AX_.getCurrent() * UPDATE_PERIODE/1000);
+  return energy_;
 }
 
 void readMsg(){
@@ -226,7 +246,7 @@ void readMsg(){
   }
   
   // Analyse des éléments du message message
-  parse_msg = doc["pulsePWM"];
+  /*parse_msg = doc["pulsePWM"];
   if(!parse_msg.isNull()){
      pulsePWM_ = doc["pulsePWM"].as<float>();
   }
@@ -234,11 +254,27 @@ void readMsg(){
   parse_msg = doc["pulseTime"];
   if(!parse_msg.isNull()){
      pulseTime_ = doc["pulseTime"].as<float>();
-  }
+  }*/
 
-  parse_msg = doc["pulse"];
+  parse_msg = doc["Nb_obstacle"];
   if(!parse_msg.isNull()){
-     shouldPulse_ = doc["pulse"];
+     nb_obstacle_ = doc["Nb_obstacle"];
+  }
+  parse_msg = doc["In_run"];
+  if(!parse_msg.isNull()){
+    run_ = doc["In_run"];
+  }
+  parse_msg = doc["Magnet_on"];
+  if(!parse_msg.isNull()){
+    magnet_on_ = doc["Magnet_on"];
+  }
+  parse_msg = doc["Competition_mode"];
+  if(!parse_msg.isNull()){
+     comp_mode_= doc["Competition_mode"];
+  }
+  parse_msg = doc["Test_mode"];
+  if(!parse_msg.isNull()){
+     test_mode_= doc["Test_mode"];
   }
 }
 
@@ -251,7 +287,8 @@ double PIDmeasurement1(){ //Position du chariot
   return position;
 }
 double PIDmeasurement2(){ //Position du pendule
-  return analogRead(POTPIN);
+  Serial.println(vexEncoder_.getCount());
+  return vexEncoder_.getCount();;
 }
 
 /* Dépend des enables de PID

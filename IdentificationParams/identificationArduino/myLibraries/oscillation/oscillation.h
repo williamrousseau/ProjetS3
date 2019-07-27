@@ -33,7 +33,7 @@ class oscillation
     int capaciteAngle;
     float omega;
     float epsilon;
-    unsigned long measureTime_[5000]; // Mesure de time pour cette classe
+    unsigned long measureTime_[2]; // Mesure de time pour cette classe
     unsigned long dtMs_; // Periode entre les commandes
     bool enabled;
     float lastCommand;
@@ -41,7 +41,7 @@ class oscillation
     void (*commandFunc)(double) = nullptr; // Command function
     int tailleTemps;
     int angleZero;
-    int difference;
+    int angleMax;
     int currentDifference;
     int sens;
     bool startUp;

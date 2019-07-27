@@ -11,13 +11,11 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    Serial.println("Constructeur");
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
-    dtMs_ = 1; //période de 1 ms
+    dtMs_ = 5; //période de 1 ms
     epsilon = 1;
-    tailleTemps = 0;
     enabled = 0;
     lastCommand = 0;
     j = 0;
@@ -25,13 +23,13 @@ oscillation::oscillation()
     angleZero = 0;
     currentDifference = 0;
     sens = 0;
-    difference = 0;
+    angleMax = 0;
     startUp = 1;
 }
 
 void oscillation::enable()
 {
-    measureTime_[tailleTemps] = millis() + dtMs_;
+    measureTime_[0] = millis() + dtMs_;
     enabled = 1;
     angleZero = measurementFunc();
     Serial.println("enabled");
@@ -39,16 +37,15 @@ void oscillation::enable()
 
 void oscillation::run()
 {
-    Serial.println("millis:");
-    Serial.println(millis());
-    Serial.println("measureTime_");
-    Serial.println(measureTime_[tailleTemps]);
+    //Serial.println("millis:");
+    //Serial.println(millis());
+    //Serial.println("measureTime_");
+    //Serial.println(measureTime_[0]);
    
-    if (millis() >= measureTime_[tailleTemps])
+    if (millis() >= measureTime_[0])
     {
-        tailleTemps++;
-        Serial.println("millis >= measureTime_");
-        measureTime_[tailleTemps] = millis() + dtMs_;
+        //Serial.println("millis >= measureTime_");
+        measureTime_[0] = millis() + dtMs_;
         if (enabled)
         {
             commandeOscillation(measurementFunc());
@@ -63,7 +60,7 @@ void oscillation::commandeOscillation(double angle)
     if (startUp == 1)
     {
         sens = 1;
-        difference = fabs(angle - angleZero);
+        angleMax = abs(angle - angleZero);
         startUp = 0;
         commande = 0.5;
         commandFunc(commande);
@@ -74,22 +71,23 @@ void oscillation::commandeOscillation(double angle)
     {
         if(sens == -1)
         {   
-            difference = fabs(angle - angleZero);
+            angleMax = abs(angle - angleZero);
         }
         sens = 1;
-        currentDifference = fabs(angle - angleZero);
-        commande = (difference - currentDifference)/difference;
+        currentDifference = abs(angle - angleZero);
+        if (currentDifference )
+        commande = (angleMax - currentDifference)/angleMax;
         commandFunc(commande); 
     }
     else 
     {
         if(sens == 1)
         {
-            difference = fabs(angle - angleZero);
+            angleMax = abs(angle - angleZero);
         }
         sens = -1;
-        currentDifference = fabs(angle - angleZero);
-        commande = -(difference - currentDifference)/difference;
+        currentDifference = abs(angle - angleZero);
+        commande = -(angleMax - currentDifference)/angleMax;
         commandFunc(commande); 
     }
 }
@@ -120,6 +118,6 @@ void oscillation::vitesseAngulaire(double angle)
         anglePrec = angleLive;
     }
     
-    Serial.println("omega");
-    Serial.println(omega);
+    /*Serial.println("omega");
+    Serial.println(omega);*/
 }
