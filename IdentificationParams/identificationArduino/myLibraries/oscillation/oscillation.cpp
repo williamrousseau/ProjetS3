@@ -11,8 +11,8 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    pointeActivite = 3/4;        //PARAMS
-    Accel = 1.5;                 //À
+    pointeActivite = 0.75;        //PARAMS
+    Accel = 1.3;                 //À
     angleMin = 50;               //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
@@ -61,7 +61,6 @@ void oscillation::commandeOscillation(double angle)
     
     else if (omega < 0)
     {
-        Serial.println(angle);
         if(sens == -1)
         {   
             topAngle = abs(angle)*pointeActivite;
