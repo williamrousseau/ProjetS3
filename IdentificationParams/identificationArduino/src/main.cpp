@@ -74,8 +74,9 @@ void readMsg();
 void serialEvent();
 
 // Fonctions pour le PID
-double PIDmeasurement1();
-double PIDmeasurement2();
+double PIDmeasurementPos();
+double PIDmeasurementAngle();
+double PIDmeasurementAngleNoflip();
 void PIDcommand(double cmd);
 void PIDgoalReached1();
 void PIDgoalReached2();
@@ -104,20 +105,19 @@ void setup() {
   digitalWrite(MAGPIN,HIGH);
 
   // Initialisation du PID 1
-  pid_.setGains(5, 0 ,0.0001, 10, 0, 1);       //gains bidons
-  pid_.setWeight(1, 0);                       //pondérations bidons
-  //pid_.setWeight(1-0.025,0.025);
+pid_.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_.setWeight(1,0.025);
     // Attache des fonctions de retour
-    pid_.setMeasurementFunc(PIDmeasurement1, PIDmeasurement2);
+    pid_.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*, PIDmeasurementAngleNoflip*/);
     pid_.setCommandFunc(PIDcommand);
     pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
-  pid_.setEpsilon(0.001, 0.001);                 //tolerances bidons
-  pid_.setPeriod(200);
-  pid_.setGoal(2,0);
+  pid_.setEpsilon(0.005, 9);
+  pid_.setPeriod(10);
+  pid_.setGoal(0, 0);
   pid_.enable();
   oscille.setCommandFunc(PIDcommand);
-  oscille.setMeasurementFunc1(PIDmeasurement2);
-  oscille.setMeasurementFunc2(PIDmeasurement1);
+  oscille.setMeasurementFunc1(PIDmeasurementAngle);
+  oscille.setMeasurementFunc2(PIDmeasurementPos);
   oscille.enable();
 
   // Initialisation des variables
@@ -141,7 +141,7 @@ void loop() {
   
   
   // mise à jour du PID
-  //pid_.run();
+  pid_.run();                                                                   //OVERWRITE POUR TESTS
 
   if (etat_ == INITTOE && readyTOchange_)
   {
@@ -182,27 +182,27 @@ void loop() {
     {
       case INITTOE:
       oscille.init();
-      if(PIDmeasurement2() >= 10){
+      if(PIDmeasurementAngle() >= 10){
         readyTOchange_ = true;
       }
       break;
 
       case OSCILLATION:      
         oscille.run();
-        if (PIDmeasurement2() > 130)
+        if (PIDmeasurementAngle() > 130)
         {          
             readyTOchange_ = true;                   
         }         
        break;
     
       case STUFAITPASDTOURBILLON:
-        if(PIDmeasurement2() < 0){
+        if(PIDmeasurementAngle() < 0){
           go = true;
         }
-        if(PIDmeasurement2() > 20 && go){
+        if(PIDmeasurementAngle() > 20 && go){
           AX_.setMotorPWM(0, 0.9);
           AX_.setMotorPWM(1, 0.9);
-          if(PIDmeasurement1() > 0.70){
+          if(PIDmeasurementPos() > 0.70){
             readyTOchange_ = true;
             AX_.setMotorPWM(0, 0);
             AX_.setMotorPWM(1, 0);
@@ -277,9 +277,9 @@ void sendMsg(){
   doc["Energy (Ws)"] = get_energy(); 
   doc["Test_mode"] = test_mode_;
   doc["Competition_mode"] = comp_mode_;
-  doc["Position"] = PIDmeasurement1() * 100;
+  doc["Position"] = PIDmeasurementPos() * 100;
   doc["Etat"] = etat_;
-  doc["Angle"] = PIDmeasurement2();
+  doc["Angle"] = PIDmeasurementAngle();
 
 
   // Serialisation
@@ -348,15 +348,31 @@ void readMsg(){
 
 
 // Fonctions pour le PID
-double PIDmeasurement1(){ //Position du chariot
+double PIDmeasurementPos(){ //Position du chariot
   double position1 = AX_.readEncoder(0)*kgear*WheelR*PI*2/3200;
   double position2 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
   double position = (position1 + position2)/2;
   return position;
 }
-double PIDmeasurement2(){ //Position du pendule
+double PIDmeasurementAngle(){ //Position du pendule
   return vexEncoder_.getCount()*4;
 }
+
+double PIDmeasurementAngleNoflip(){ //Position du pendule
+  int32_t angle_deg = PIDmeasurementAngle();
+
+  //Retourne des angles entre -360 et 360 grâce à :
+  while(angle_deg < -180){
+    angle_deg = angle_deg + 360;
+    //int tours ++ 
+  }
+  while(angle_deg > 180){
+    angle_deg = angle_deg - 360;
+  }
+  return angle_deg;
+}
+
+
 
 /* Dépend des enables de PID
 Sortie dépendante des deux PIDS */
@@ -365,8 +381,8 @@ void PIDcommand(double cmd){
   AX_.setMotorPWM(1, cmd);
 }
 void PIDgoalReached1(){
-  pid_.disable();
+  //pid_.disable1();
 }
 void PIDgoalReached2(){
-  pid_.disable();
+  //pid_.disable2();
 }

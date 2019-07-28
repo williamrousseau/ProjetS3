@@ -64,7 +64,7 @@ void doublePID::run(){
             }
             else{
                 commandPID_1 = computeCommand1(error1);
-                Serial.print("       command1");Serial.print(commandPID_1);
+                //Serial.print("       command1");Serial.print(commandPID_1);
             }
         }
         if(enable_2){                                            //2
@@ -79,7 +79,7 @@ void doublePID::run(){
             }
             else{
                 commandPID_2 = computeCommand2(error2);
-                Serial.print("       command2");Serial.print(commandPID_2);
+                //Serial.print("       command2");Serial.print(commandPID_2);
             }
         }
         commandFunc_(weightPID_1 * commandPID_1 + weightPID_2 * commandPID_2);
