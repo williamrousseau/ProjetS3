@@ -11,23 +11,23 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    pointeActivite = 0.5;        //PARAMS
-    Accel = 1.3;
+    pointeActivite = 0.8;        //PARAMS
+    Accel = 1;
     Accel_ini = 1;                 //À
-    angleMin = 50;               //CHANGER
+    angleMin = 35;               //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
-    dtMs_ = 10; //période de 1 ms
+    dtMs_ = 1; //période de 1 ms
     enabled = 0;
     lastCommand = 0;
     j = 0;
     anglePrec = 0;
     sens = 0;
-    startUp = 1;
     topAngle = 0;
     belowAngle = 0;
     maxPos = 0;
+    angleMax = 0;
     
 }
 
@@ -53,21 +53,16 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
 {
     float commande = 0;
     vitesseAngulaire(angle);
-    /*if (startUp == 1)
-    {
-        startUp = 0;
-        commande = 0.5;
-        commandFunc(commande);
-    }*/
     
     if (omega < 0)
     {
         if(sens == -1)
         {   
+            angleMax = angle;
             topAngle = abs(angle)*pointeActivite;
             belowAngle = -abs(angle)*pointeActivite;
-            if (topAngle < angleMin) topAngle = angleMin;
-            if (belowAngle > -angleMin) belowAngle = -angleMin;
+            if (topAngle < angleMin) topAngle = angleMax;
+            if (belowAngle > -angleMin) belowAngle = -angleMax;
         }
         sens = 1;
         if(angle < topAngle && angle > belowAngle)
@@ -101,8 +96,8 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         {   
             topAngle = angle*pointeActivite;
             belowAngle = -angle*pointeActivite;
-            if (topAngle > -angleMin) topAngle = -angleMin;
-            if (belowAngle < angleMin) belowAngle = angleMin;
+            if (topAngle > -angleMin) topAngle = -angleMax;
+            if (belowAngle < angleMin) belowAngle = angleMax;
         }
         sens = -1;
         if(angle > topAngle && angle < belowAngle)

@@ -207,35 +207,31 @@ void loop() {
   {
     bool go = false;
     switch (etat_)
-    {
+    {/*
       case INITTOE:
       oscille.init();
       if(PIDmeasurementAngle() >= 10){
         readyTOchange_ = true;
       }
       break;
-
-      case OSCILLATION:      
+*/
+      case OSCILLATION:   
         oscille.run();
-        if (PIDmeasurementAngle() > 130)
-        {          
-            readyTOchange_ = true;                   
-        }         
+        if (PIDmeasurementAngle() > 110){
+          go = true;    
+        }
+        if(PIDmeasurementAngle() < -100 && go)       
+          readyTOchange_ = true;        
        break;
     
       case STUFAITPASDTOURBILLON:
-        if(PIDmeasurementAngle() < 0){
-          go = true;
+        pid_position.run();
+        if(PIDmeasurementAngle() > 0){
+          //pid_.run();
         }
         if(PIDmeasurementAngle() > 20 && go){
-          AX_.setMotorPWM(0, 0.9);
-          AX_.setMotorPWM(1, 0.9);
-          if(PIDmeasurementPos() > 0.70){
-            readyTOchange_ = true;
-            AX_.setMotorPWM(0, 0);
-            AX_.setMotorPWM(1, 0);
-          }
-        }                  
+          //pid_.run();
+        }                         
         break;
 
       case CALMETOE:

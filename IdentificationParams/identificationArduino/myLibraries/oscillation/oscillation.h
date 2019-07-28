@@ -49,7 +49,7 @@ class oscillation
     int topAngle;
     int belowAngle;
     double maxPos;
-    bool startUp;
+    int angleMax;
     float Accel;
     float Accel_ini;
 
