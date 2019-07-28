@@ -140,7 +140,7 @@ void setup() {
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
   pid_position.setPeriod(10);
-  pid_position.setGoal(0, 0);
+  pid_position.setGoal(0.7, 0);
   pid_position.enable();
 
 
@@ -151,8 +151,8 @@ void setup() {
 
   // Initialisation des variables
   readyTOchange_ = false;
-  etat_ = 0;
-  run_ = false;
+  etat_ = 2;
+  run_ = true;
   CALME = false;
 }
 
@@ -217,14 +217,16 @@ void loop() {
 */
       case OSCILLATION:   
         oscille.run();
-        if (PIDmeasurementAngle() > 110){
+        if (PIDmeasurementAngle() > 130){
           go = true;    
+          readyTOchange_ = true; 
         }
-        if(PIDmeasurementAngle() < -100 && go)       
-          readyTOchange_ = true;        
+        //if(PIDmeasurementAngle() < -100 && go)       
+          //readyTOchange_ = true;        
        break;
     
       case STUFAITPASDTOURBILLON:
+        //oscille.disable();
         pid_position.run();
         if(PIDmeasurementAngle() > 0){
           //pid_.run();
@@ -324,7 +326,7 @@ double get_energy(){
 void manage_state(bool run_){
   if (run_)
   {
-    etat_ = INITTOE;
+    etat_ = OSCILLATION;
   }
   if (!run_)
   {
