@@ -12,9 +12,11 @@ Class to control a PID
 oscillation::oscillation()
 {
     pointeActivite = 0.8;        //PARAMS
-    Accel = 1;
-    Accel_ini = 1;                 //À
-    angleMin = 35;               //CHANGER
+    Accel = 1;                   //À
+    rapportSafety = 0.9;
+    angleMin = 35;
+    maxPos = 0.3;            
+    noSlipCommand = 0.8;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
@@ -26,8 +28,9 @@ oscillation::oscillation()
     sens = 0;
     topAngle = 0;
     belowAngle = 0;
-    maxPos = 0;
+    
     angleMax = 0;
+    
     
 }
 
@@ -35,6 +38,27 @@ void oscillation::enable()
 {
     measureTime_[0] = millis() + dtMs_;
     enabled = 1;
+    startup = 1;
+    for (int i=0; i<capaciteAngle; i++)
+    {
+        tableauAngle[i] = 0;
+    }
+}
+
+void oscillation::disable()
+{
+    measureTime_[0] = 0;
+    enabled = 0;
+    startup = 1;
+    tailleAngle = 0;
+    omega = 0;  
+    lastCommand = 0;
+    j = 0;
+    anglePrec = 0;
+    sens = 0;
+    topAngle = 0;
+    belowAngle = 0;
+    angleMax = 0;    
 }
 
 void oscillation::run()
@@ -53,9 +77,40 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
 {
     float commande = 0;
     vitesseAngulaire(angle);
-    
-    if (omega < 0)
+    if (startup)
+    {   
+        //Serial.println("OOOOOOOOOOOOOOOO");
+        if (startup == 1)
+        {
+            commande = ((rapportSafety*0.5*maxPos)-abs((rapportSafety*0.5*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
+            if (commande < noSlipCommand) commande = noSlipCommand;
+            if(measurementFunc2()>rapportSafety*maxPos)
+            {
+                commande = 0;
+                if (omega > 0)
+                {
+                    startup = 2;
+                }
+            }
+        }
+        if (startup == 2)
+        {
+            commande = -((rapportSafety*0.25*maxPos)-abs((rapportSafety*0.25*maxPos)-measurementFunc2()))/(rapportSafety*0.25*maxPos);
+            if (commande > -noSlipCommand) commande = -noSlipCommand;
+            if(measurementFunc2()<rapportSafety*0.5*maxPos)
+            {
+                commande = 0;
+                startup = 0;
+                if(omega<0) sens = -1;
+                if(omega>0) sens = 1;
+            }
+        }
+
+        commandFunc(commande);
+    }
+    if (omega < 0 && startup == 0)
     {
+        //Serial.println("-----------");
         if(sens == -1)
         {   
             angleMax = angle;
@@ -67,7 +122,7 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         sens = 1;
         if(angle < topAngle && angle > belowAngle)
         {   
-            if (measurementFunc2() > maxPos)
+            if (measurementFunc2() > maxPos*rapportSafety)
             {
                 commande = 0;
             }
@@ -90,8 +145,9 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
             commandFunc(0);
         }
     }
-    else if (omega > 0)
+    else if (omega > 0 && startup == 0)
     {
+        //Serial.println("-----------");
         if(sens == 1)
         {   
             topAngle = angle*pointeActivite;
@@ -102,7 +158,11 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         sens = -1;
         if(angle > topAngle && angle < belowAngle)
         {
-            if (angle <= 0)
+            if (measurementFunc2() < 0.05)
+            {
+                commande = 0;
+            }
+            else if (angle <= 0)
             {
                 commande = -Acceleration*(topAngle-angle)/topAngle;
             }
@@ -121,8 +181,9 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
             commandFunc(0);
         }
     }
-    else
+    else if (startup == 0)
     {
+        //Serial.println("-----------");
         commandFunc(commande);
     }
     
@@ -158,31 +219,4 @@ void oscillation::vitesseAngulaire(double angle)
 void oscillation::setMaxPos(double posSapin)
 {
     maxPos = posSapin-0.1;
-}
-
-void oscillation::init(){
-    int first=0;
-    if(measurementFunc2() < 0.20){
-        float commande = 0.6;
-        commandFunc(commande);
-    }
-    if(measurementFunc2() >= 0.20){
-        first = 1;
-    }
-    if(first == 1){
-        if(measurementFunc2() > 0.05){
-            float commande = -0.6;
-            commandFunc(commande);
-        }
-    }
-    else{
-        if (millis() >= measureTime_[0])
-        {
-            measureTime_[0] = millis() + dtMs_;
-         if (enabled)
-         {
-             commandeOscillation(measurementFunc1(), Accel_ini);
-         }
-        }
-    }
 }
