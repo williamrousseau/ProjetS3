@@ -24,11 +24,11 @@
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
 #define RAPPORTVITESSE  50          // Rapport de vitesse du moteur
 
-#define INITTOE         1           // Variable d'etat pour le cas d'initialisation du sequencement
-#define OSCILLATION     2           // Variable d'etat pour le cas d'oscillement du sequencement
-#define GOGOGO          3           // Variable d'etat pour le cas d'acceleration du sequencement
-#define CALMETOE        4           // Variable d'etat pour le cas de ralentissement du sequencement
-#define GOGETMOREBREAD  5           // Variable d'etat pour le cas de retour du sequencement
+#define INITTOE               1     // Variable d'etat pour le cas d'initialisation du sequencement
+#define OSCILLATION           2     // Variable d'etat pour le cas d'oscillement du sequencement
+#define STUFAITPASDTOURBILLON 3     // Variable d'etat pour le cas d'acceleration du sequencement
+#define CALMETOE              4     // Variable d'etat pour le cas de ralentissement du sequencement
+#define GOGETMOREBREAD        5     // Variable d'etat pour le cas de retour du sequencement
 
 /*---------------------------- variables globales ---------------------------*/
 
@@ -151,12 +151,12 @@ void loop() {
   
 
   if(etat_ == OSCILLATION && readyTOchange_){
-    etat_ = GOGOGO;
+    etat_ = STUFAITPASDTOURBILLON;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
 
-  if(etat_ == GOGOGO && readyTOchange_){
+  if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
     etat_ = GOGETMOREBREAD;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
@@ -177,24 +177,37 @@ void loop() {
 
   if (run_)
   {
+    bool go = false;
     switch (etat_)
     {
       case INITTOE:
-      if(millis() > 3000){
+      oscille.init();
+      if(PIDmeasurement2() >= 10){
         readyTOchange_ = true;
       }
       break;
 
       case OSCILLATION:      
         oscille.run();
-        if (PIDmeasurement2() > 120)
-        {
-          readyTOchange_ = true;
-       }         
+        if (PIDmeasurement2() > 130)
+        {          
+            readyTOchange_ = true;                   
+        }         
        break;
     
-      case GOGOGO:
-      
+      case STUFAITPASDTOURBILLON:
+        if(PIDmeasurement2() < 0){
+          go = true;
+        }
+        if(PIDmeasurement2() > 20 && go){
+          AX_.setMotorPWM(0, 0.9);
+          AX_.setMotorPWM(1, 0.9);
+          if(PIDmeasurement1() > 0.70){
+            readyTOchange_ = true;
+            AX_.setMotorPWM(0, 0);
+            AX_.setMotorPWM(1, 0);
+          }
+        }                  
         break;
 
       case CALMETOE:
@@ -264,7 +277,7 @@ void sendMsg(){
   doc["Energy (Ws)"] = get_energy(); 
   doc["Test_mode"] = test_mode_;
   doc["Competition_mode"] = comp_mode_;
-  doc["Position"] = PIDmeasurement1();
+  doc["Position"] = PIDmeasurement1() * 100;
   doc["Etat"] = etat_;
   doc["Angle"] = PIDmeasurement2();
 
@@ -339,7 +352,7 @@ double PIDmeasurement1(){ //Position du chariot
   double position1 = AX_.readEncoder(0)*kgear*WheelR*PI*2/3200;
   double position2 = AX_.readEncoder(1)*kgear*WheelR*PI*2/3200;
   double position = (position1 + position2)/2;
-  return position * 100;
+  return position;
 }
 double PIDmeasurement2(){ //Position du pendule
   return vexEncoder_.getCount()*4;

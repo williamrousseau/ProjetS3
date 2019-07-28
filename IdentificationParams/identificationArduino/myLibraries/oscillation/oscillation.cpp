@@ -11,8 +11,9 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    pointeActivite = 0.75;        //PARAMS
-    Accel = 1.3;                 //À
+    pointeActivite = 0.5;        //PARAMS
+    Accel = 1.3;
+    Accel_ini = 1;                 //À
     angleMin = 50;               //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
@@ -43,23 +44,23 @@ void oscillation::run()
         measureTime_[0] = millis() + dtMs_;
         if (enabled)
         {
-            commandeOscillation(measurementFunc1());
+            commandeOscillation(measurementFunc1(), Accel);
         }
     }
 }
 
-void oscillation::commandeOscillation(double angle)
+void oscillation::commandeOscillation(double angle, float Acceleration)
 {
     float commande = 0;
     vitesseAngulaire(angle);
-    if (startUp == 1)
+    /*if (startUp == 1)
     {
         startUp = 0;
         commande = 0.5;
         commandFunc(commande);
-    }
+    }*/
     
-    else if (omega < 0)
+    if (omega < 0)
     {
         if(sens == -1)
         {   
@@ -77,11 +78,11 @@ void oscillation::commandeOscillation(double angle)
             }
             else if (angle >= 0)
             {
-                commande = Accel*(topAngle-angle)/topAngle*1.5;
+                commande = Acceleration*(topAngle-angle)/topAngle;
             }
             else if (angle < 0)
             {
-                commande = Accel*(belowAngle-angle)/belowAngle;
+                commande = Acceleration*(belowAngle-angle)/belowAngle;
             }
             if (commande>1)
             {
@@ -108,11 +109,11 @@ void oscillation::commandeOscillation(double angle)
         {
             if (angle <= 0)
             {
-                commande = -Accel*(topAngle-angle)/topAngle*1.5;
+                commande = -Acceleration*(topAngle-angle)/topAngle;
             }
             else if (angle > 0)
             {
-                commande = -Accel*(belowAngle-angle)/belowAngle;
+                commande = -Acceleration*(belowAngle-angle)/belowAngle;
             }
             if (commande<-1)
             {
@@ -162,4 +163,31 @@ void oscillation::vitesseAngulaire(double angle)
 void oscillation::setMaxPos(double posSapin)
 {
     maxPos = posSapin-0.1;
+}
+
+void oscillation::init(){
+    int first=0;
+    if(measurementFunc2() < 0.20){
+        float commande = 0.6;
+        commandFunc(commande);
+    }
+    if(measurementFunc2() >= 0.20){
+        first = 1;
+    }
+    if(first == 1){
+        if(measurementFunc2() > 0.05){
+            float commande = -0.6;
+            commandFunc(commande);
+        }
+    }
+    else{
+        if (millis() >= measureTime_[0])
+        {
+            measureTime_[0] = millis() + dtMs_;
+         if (enabled)
+         {
+             commandeOscillation(measurementFunc1(), Accel_ini);
+         }
+        }
+    }
 }

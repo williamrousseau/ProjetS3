@@ -15,7 +15,7 @@ class oscillation
 {
   public:
     oscillation();
-    void commandeOscillation(double angle);
+    void commandeOscillation(double angle, float Acceleration);
 
     void setMeasurementFunc1(double (*f)()){measurementFunc1 = f;};
     void setMeasurementFunc2(double (*f)()){measurementFunc2 = f;};
@@ -25,6 +25,8 @@ class oscillation
     void vitesseAngulaire(double angle);
     void run();
     void setMaxPos(double posSapin);
+
+    void init();
 
 
   private:
@@ -49,5 +51,8 @@ class oscillation
     double maxPos;
     bool startUp;
     float Accel;
+    float Accel_ini;
+
+    ArduinoX AX_;
 };
 #endif
