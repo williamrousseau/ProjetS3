@@ -22,6 +22,7 @@ class oscillation
     void setCommandFunc(void (*f)(double)){commandFunc = f;};
 
     void enable();
+    void disable();
     void vitesseAngulaire(double angle);
     void run();
     void setMaxPos(double posSapin);
@@ -52,6 +53,9 @@ class oscillation
     int angleMax;
     float Accel;
     float Accel_ini;
+    int startup;
+    float rapportSafety;
+    float noSlipCommand;
 
     ArduinoX AX_;
 };
