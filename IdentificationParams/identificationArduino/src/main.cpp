@@ -219,10 +219,10 @@ void loop() {
         oscille.run();
         if (PIDmeasurementAngle() > 130){
           go = true;    
-          readyTOchange_ = true; 
+          //readyTOchange_ = true; 
         }
-        //if(PIDmeasurementAngle() < -100 && go)       
-          //readyTOchange_ = true;        
+        if(PIDmeasurementAngle() < -100 && go)       
+          readyTOchange_ = true;        
        break;
     
       case STUFAITPASDTOURBILLON:
