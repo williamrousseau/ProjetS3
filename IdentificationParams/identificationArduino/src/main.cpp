@@ -36,7 +36,9 @@ ArduinoX AX_;                       // objet arduinoX
 MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
-doublePID pid_;                     // objet PID
+doublePID pid_double;                     // objet PID
+doublePID pid_pendule;                     // objet PID
+doublePID pid_position;                     // objet PID
 oscillation oscille;
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
@@ -66,6 +68,7 @@ bool magnet_on_;
 bool test_mode_, comp_mode_;
 bool readyTOchange_;
 int etat_;
+bool CALME;
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
@@ -100,21 +103,47 @@ void setup() {
   timerSendMsg_.setCallback(timerCallback);
   timerSendMsg_.enable();
 
-  //electroaimant
+  //Electroaimant
   pinMode(MAGPIN,OUTPUT);
   digitalWrite(MAGPIN,HIGH);
 
-  // Initialisation du PID 1
-pid_.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
-  pid_.setWeight(1,0.025);
+  // Initialisation du PID double
+  pid_double.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double.setWeight(1,0.025);
     // Attache des fonctions de retour
-    pid_.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*, PIDmeasurementAngleNoflip*/);
-    pid_.setCommandFunc(PIDcommand);
-    pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
-  pid_.setEpsilon(0.005, 9);
-  pid_.setPeriod(10);
-  pid_.setGoal(0, 0);
-  pid_.enable();
+    pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_double.setCommandFunc(PIDcommand);
+    pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_double.setEpsilon(0.005, 9);
+  pid_double.setPeriod(10);
+  pid_double.setGoal(1, 0);
+  pid_double.enable();
+
+  // Initialisation du PID double
+  pid_pendule.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
+  pid_pendule.setWeight(0,0.025);
+    // Attache des fonctions de retour
+    pid_pendule.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_pendule.setCommandFunc(PIDcommand);
+    pid_pendule.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_pendule.setEpsilon(0.005, 9);
+  pid_pendule.setPeriod(10);
+  pid_pendule.setGoal(0, 0);
+  pid_pendule.enable();
+  
+  // Initialisation du PID position
+  pid_position.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
+  pid_position.setWeight(1,0);
+    // Attache des fonctions de retour
+    pid_position.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_position.setCommandFunc(PIDcommand);
+    pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_position.setEpsilon(0.005, 9);
+  pid_position.setPeriod(10);
+  pid_position.setGoal(0, 0);
+  pid_position.enable();
+
+
   oscille.setCommandFunc(PIDcommand);
   oscille.setMeasurementFunc1(PIDmeasurementAngle);
   oscille.setMeasurementFunc2(PIDmeasurementPos);
@@ -124,6 +153,7 @@ pid_.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
   readyTOchange_ = false;
   etat_ = 0;
   run_ = false;
+  CALME = false;
 }
 
 
@@ -139,9 +169,7 @@ void loop() {
   }
 
   
-  
-  // mise à jour du PID
-  pid_.run();                                                                   //OVERWRITE POUR TESTS
+  //pid_double.run();                                                                   //OVERWRITE POUR TESTS
 
   if (etat_ == INITTOE && readyTOchange_)
   {
@@ -157,23 +185,23 @@ void loop() {
   }
 
   if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
-    etat_ = GOGETMOREBREAD;
-    readyTOchange_ = false;
-    // Reste des initialisation pour le prochain état
-  }
-
-  if(etat_ == GOGETMOREBREAD && readyTOchange_){
     etat_ = CALMETOE;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
 
   if(etat_ == CALMETOE && readyTOchange_){
-    etat_ = 0;
+    etat_ = GOGETMOREBREAD;
     readyTOchange_ = false;
-    run_ = false;
     // Reste des initialisation pour le prochain état
   }
+
+  if(etat_ == GOGETMOREBREAD && readyTOchange_){
+    etat_ = 0;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
 
   if (run_)
   {
@@ -211,7 +239,10 @@ void loop() {
         break;
 
       case CALMETOE:
-      
+        pid_double.run();
+        if(CALME){
+          readyTOchange_ = true; 
+        }
        break;
 
       case GOGETMOREBREAD:
@@ -381,8 +412,11 @@ void PIDcommand(double cmd){
   AX_.setMotorPWM(1, cmd);
 }
 void PIDgoalReached1(){
-  //pid_.disable1();
+  //pid_double.disable1();
+}
+void PIDgoalReachedDouble(){
+  CALME = true;
 }
 void PIDgoalReached2(){
-  //pid_.disable2();
+  //pid_double.disable2();
 }

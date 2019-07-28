@@ -38,6 +38,7 @@ class doublePID
     */
     void disable1();
     void disable2();
+    void disableAll();
     
     /** Method to check if the doublePID needs to be run
     @param goal

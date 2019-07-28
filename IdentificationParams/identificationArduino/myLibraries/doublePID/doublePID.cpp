@@ -42,6 +42,10 @@ void doublePID::disable1(){
 void doublePID::disable2(){
     enable_2 = false;
 }
+void doublePID::disableAll(){
+    enable_1 = false;
+    enable_2 = false;
+}
 
 
 void doublePID::run(){
