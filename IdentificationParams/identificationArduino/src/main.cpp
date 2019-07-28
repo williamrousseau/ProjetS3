@@ -106,14 +106,14 @@ void setup() {
 
   // Initialisation du PID 1
 pid_.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
-  pid_.setWeight(1,0.025);
+  pid_.setWeight(1,0.0);
     // Attache des fonctions de retour
     pid_.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*, PIDmeasurementAngleNoflip*/);
     pid_.setCommandFunc(PIDcommand);
     pid_.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_.setEpsilon(0.005, 9);
   pid_.setPeriod(10);
-  pid_.setGoal(0, 0);
+  pid_.setGoal(0.5, 0);
   pid_.enable();
   oscille.setCommandFunc(PIDcommand);
   oscille.setMeasurementFunc1(PIDmeasurementAngle);
@@ -122,8 +122,8 @@ pid_.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
 
   // Initialisation des variables
   readyTOchange_ = false;
-  etat_ = 0;
-  run_ = false;
+  etat_ = 2;
+  run_ = true;
 }
 
 
@@ -141,7 +141,7 @@ void loop() {
   
   
   // mise à jour du PID
-  pid_.run();                                                                   //OVERWRITE POUR TESTS
+  //pid_.run();                                                                   //OVERWRITE POUR TESTS
 
   if (etat_ == INITTOE && readyTOchange_)
   {
@@ -179,35 +179,31 @@ void loop() {
   {
     bool go = false;
     switch (etat_)
-    {
+    {/*
       case INITTOE:
       oscille.init();
       if(PIDmeasurementAngle() >= 10){
         readyTOchange_ = true;
       }
       break;
-
-      case OSCILLATION:      
+*/
+      case OSCILLATION:   
         oscille.run();
-        if (PIDmeasurementAngle() > 130)
-        {          
-            readyTOchange_ = true;                   
-        }         
+        if (PIDmeasurementAngle() > 110){
+          go = true;    
+        }
+        if(PIDmeasurementAngle() < -100 && go)       
+          readyTOchange_ = true;        
        break;
     
       case STUFAITPASDTOURBILLON:
-        if(PIDmeasurementAngle() < 0){
-          go = true;
+        pid_.run();
+        if(PIDmeasurementAngle() > 0){
+          //pid_.run();
         }
         if(PIDmeasurementAngle() > 20 && go){
-          AX_.setMotorPWM(0, 0.9);
-          AX_.setMotorPWM(1, 0.9);
-          if(PIDmeasurementPos() > 0.70){
-            readyTOchange_ = true;
-            AX_.setMotorPWM(0, 0);
-            AX_.setMotorPWM(1, 0);
-          }
-        }                  
+          //pid_.run();
+        }                         
         break;
 
       case CALMETOE:
