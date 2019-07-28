@@ -26,9 +26,11 @@
 
 #define INITTOE               1     // Variable d'etat pour le cas d'initialisation du sequencement
 #define OSCILLATION           2     // Variable d'etat pour le cas d'oscillement du sequencement
-#define STUFAITPASDTOURBILLON 3     // Variable d'etat pour le cas d'acceleration du sequencement
-#define CALMETOE              4     // Variable d'etat pour le cas de ralentissement du sequencement
-#define GOGETMOREBREAD        5     // Variable d'etat pour le cas de retour du sequencement
+#define PREPARE1TOURBILLON    3
+#define PREPARE2TOURBILLON    4
+#define STUFAITPASDTOURBILLON 5     // Variable d'etat pour le cas d'acceleration du sequencement
+#define CALMETOE              6     // Variable d'etat pour le cas de ralentissement du sequencement
+#define GOGETMOREBREAD        7     // Variable d'etat pour le cas de retour du sequencement
 
 /*---------------------------- variables globales ---------------------------*/
 
@@ -140,7 +142,7 @@ void setup() {
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
   pid_position.setPeriod(10);
-  pid_position.setGoal(0.7, 0);
+  pid_position.setGoal(1.2, 0);
   pid_position.enable();
 
 
@@ -151,8 +153,8 @@ void setup() {
 
   // Initialisation des variables
   readyTOchange_ = false;
-  etat_ = 2;
-  run_ = true;
+  etat_ = 0;
+  run_ = false;
   CALME = false;
 }
 
@@ -184,6 +186,18 @@ void loop() {
     // Reste des initialisation pour le prochain état
   }
 
+  if(etat_ == PREPARE1TOURBILLON && readyTOchange_){
+    etat_ = PREPARE2TOURBILLON;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == PREPARE2TOURBILLON && readyTOchange_){
+    etat_ = STUFAITPASDTOURBILLON;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
   if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
     etat_ = CALMETOE;
     readyTOchange_ = false;
@@ -205,7 +219,6 @@ void loop() {
 
   if (run_)
   {
-    bool go = false;
     switch (etat_)
     {/*
       case INITTOE:
@@ -217,34 +230,38 @@ void loop() {
 */
       case OSCILLATION:   
         oscille.run();
-        if (PIDmeasurementAngle() > 130){
-          go = true;    
-          //readyTOchange_ = true; 
-        }
-        if(PIDmeasurementAngle() < -100 && go)       
-          readyTOchange_ = true;        
+        
+        if (PIDmeasurementAngleNoflip() > 135){
+          readyTOchange_ = true; 
+        }  
+       break;
+
+       case PREPARE1TOURBILLON:
+       if(PIDmeasurementAngleNoflip() < -100) {
+        readyTOchange_ = true;  }
+        break;
+
+       case PREPARE2TOURBILLON:
+       if(PIDmeasurementAngleNoflip() > 15)
+          readyTOchange_ = true;   
        break;
     
       case STUFAITPASDTOURBILLON:
-        //oscille.disable();
+        oscille.disable();
         pid_position.run();
-        if(PIDmeasurementAngle() > 0){
-          //pid_.run();
-        }
-        if(PIDmeasurementAngle() > 20 && go){
-          //pid_.run();
-        }                         
+        if(pid_position.isAtGoal1()) {     
+        readyTOchange_ = true;  }                              
         break;
 
       case CALMETOE:
-        pid_double.run();
+        //pid_double.run();
         if(CALME){
           readyTOchange_ = true; 
         }
         break;
 
       case GOGETMOREBREAD:
-        pid_position.run();
+        //pid_position.run();
         break;
     }
   }
@@ -308,7 +325,7 @@ void sendMsg(){
   doc["Competition_mode"] = comp_mode_;
   doc["Position"] = PIDmeasurementPos() * 100;
   doc["Etat"] = etat_;
-  doc["Angle"] = PIDmeasurementAngle();
+  doc["Angle"] = PIDmeasurementAngleNoflip();
 
 
   // Serialisation
@@ -331,6 +348,8 @@ void manage_state(bool run_){
   if (!run_)
   {
     etat_ = 0;
+    AX_.setMotorPWM(0, 0);
+    AX_.setMotorPWM(1, 0);
   }
 }
 
