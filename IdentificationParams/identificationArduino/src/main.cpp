@@ -230,7 +230,6 @@ void loop() {
 */
       case OSCILLATION:   
         oscille.run();
-<<<<<<< HEAD
         
         if (PIDmeasurementAngleNoflip() > 135){
           readyTOchange_ = true; 
@@ -245,29 +244,13 @@ void loop() {
        case PREPARE2TOURBILLON:
        if(PIDmeasurementAngleNoflip() > 15)
           readyTOchange_ = true;   
-=======
-        if (PIDmeasurementAngleNoflip() > 110){
-          go = true;    
-        }
-        if(PIDmeasurementAngleNoflip() < -100 && go)       
-          readyTOchange_ = true;        
->>>>>>> f819198126426f1ca4dbff2ce432f68ae5f85046
        break;
     
       case STUFAITPASDTOURBILLON:
         oscille.disable();
         pid_position.run();
-<<<<<<< HEAD
         if(pid_position.isAtGoal1()) {     
         readyTOchange_ = true;  }                              
-=======
-        if(PIDmeasurementAngleNoflip() > 0){
-          //pid_.run();
-        }
-        if(PIDmeasurementAngleNoflip() > 20 && go){
-          //pid_.run();
-        }                         
->>>>>>> f819198126426f1ca4dbff2ce432f68ae5f85046
         break;
 
       case CALMETOE:
