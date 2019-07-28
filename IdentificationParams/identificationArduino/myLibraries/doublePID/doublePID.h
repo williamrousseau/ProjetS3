@@ -36,7 +36,8 @@ class doublePID
 
     /** Method to disable the object
     */
-    void disable();
+    void disable1();
+    void disable2();
     
     /** Method to check if the doublePID needs to be run
     @param goal
@@ -97,7 +98,7 @@ class doublePID
     @param goal
     Desired value to converge to
     */
-    void setGoal(double goal1, double goal2){goal_2 = goal2;goal_2 = goal2;};
+    void setGoal(double goal1, double goal2){goal_1 = goal1;goal_2 = goal2;};
 
 
     /** Method to set measurement function

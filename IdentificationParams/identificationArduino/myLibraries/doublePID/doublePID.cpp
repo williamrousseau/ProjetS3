@@ -36,15 +36,17 @@ void doublePID::setWeight(double wPID1, double wPID2){
     weightPID_1 = wPID1; weightPID_2 = wPID2;
 }
 
-void doublePID::disable(){
+void doublePID::disable1(){
     enable_1 = false;
+}
+void doublePID::disable2(){
     enable_2 = false;
 }
 
 
 void doublePID::run(){
     // if enabled and time to run iteration
-    if(millis() >= measureTime_){
+    if(millis() >= measureTime_ && (enable_1||enable_2)){
         measureTime_ = millis() + dtMs_;
         commandPID_1 = 0;
         commandPID_2 = 0;
@@ -55,13 +57,14 @@ void doublePID::run(){
             if(fabs(error1)<epsilon_1){
 
                 atGoal_1 = true;
-                enable_1 = false;
+                //enable_1 = false;
                 if (atGoalFunc1 != nullptr){
                     atGoalFunc1();
                 }
             }
             else{
                 commandPID_1 = computeCommand1(error1);
+                Serial.print("       command1");Serial.print(commandPID_1);
             }
         }
         if(enable_2){                                            //2
@@ -69,17 +72,18 @@ void doublePID::run(){
             // if goal reached
             if(fabs(error2)<epsilon_2){
                 atGoal_2 = true;
-                enable_2 = false;
+                //enable_2 = false;
                 if (atGoalFunc2 != nullptr){
                     atGoalFunc2();
                 }
             }
             else{
                 commandPID_2 = computeCommand2(error2);
+                Serial.print("       command2");Serial.print(commandPID_2);
             }
         }
-        lastMeasureTime_ =  measureTime_;
         commandFunc_(weightPID_1 * commandPID_1 + weightPID_2 * commandPID_2);
+        lastMeasureTime_ =  measureTime_;
     }
     
 }
