@@ -113,7 +113,7 @@ void setup() {
   pid_double.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
   pid_double.setWeight(1,0.025);
     // Attache des fonctions de retour
-    pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_double.setCommandFunc(PIDcommand);
     pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_double.setEpsilon(0.005, 9);
@@ -125,7 +125,7 @@ void setup() {
   pid_pendule.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
   pid_pendule.setWeight(0,0.025);
     // Attache des fonctions de retour
-    pid_pendule.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_pendule.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_pendule.setCommandFunc(PIDcommand);
     pid_pendule.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_pendule.setEpsilon(0.005, 9);
@@ -137,7 +137,7 @@ void setup() {
   pid_position.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
   pid_position.setWeight(1,0);
     // Attache des fonctions de retour
-    pid_position.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngle/*Noflip*/);
+    pid_position.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_position.setCommandFunc(PIDcommand);
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
@@ -147,7 +147,7 @@ void setup() {
 
 
   oscille.setCommandFunc(PIDcommand);
-  oscille.setMeasurementFunc1(PIDmeasurementAngle);
+  oscille.setMeasurementFunc1(PIDmeasurementAngleNoflip);
   oscille.setMeasurementFunc2(PIDmeasurementPos);
   oscille.enable();
 
@@ -223,13 +223,14 @@ void loop() {
     {/*
       case INITTOE:
       oscille.init();
-      if(PIDmeasurementAngle() >= 10){
+      if(PIDmeasurementAngleNoflip() >= 10){
         readyTOchange_ = true;
       }
       break;
 */
       case OSCILLATION:   
         oscille.run();
+<<<<<<< HEAD
         
         if (PIDmeasurementAngleNoflip() > 135){
           readyTOchange_ = true; 
@@ -244,13 +245,29 @@ void loop() {
        case PREPARE2TOURBILLON:
        if(PIDmeasurementAngleNoflip() > 15)
           readyTOchange_ = true;   
+=======
+        if (PIDmeasurementAngleNoflip() > 110){
+          go = true;    
+        }
+        if(PIDmeasurementAngleNoflip() < -100 && go)       
+          readyTOchange_ = true;        
+>>>>>>> f819198126426f1ca4dbff2ce432f68ae5f85046
        break;
     
       case STUFAITPASDTOURBILLON:
         oscille.disable();
         pid_position.run();
+<<<<<<< HEAD
         if(pid_position.isAtGoal1()) {     
         readyTOchange_ = true;  }                              
+=======
+        if(PIDmeasurementAngleNoflip() > 0){
+          //pid_.run();
+        }
+        if(PIDmeasurementAngleNoflip() > 20 && go){
+          //pid_.run();
+        }                         
+>>>>>>> f819198126426f1ca4dbff2ce432f68ae5f85046
         break;
 
       case CALMETOE:
