@@ -29,8 +29,10 @@
 #define PREPARE1TOURBILLON    3
 #define PREPARE2TOURBILLON    4
 #define STUFAITPASDTOURBILLON 5     // Variable d'etat pour le cas d'acceleration du sequencement
-#define CALMETOE              6     // Variable d'etat pour le cas de ralentissement du sequencement
-#define GOGETMOREBREAD        7     // Variable d'etat pour le cas de retour du sequencement
+#define PREPARE1CALME         6
+#define PREPARE2CALME         7
+#define CALMETOE              8     // Variable d'etat pour le cas de ralentissement du sequencement
+#define GOGETMOREBREAD        9     // Variable d'etat pour le cas de retour du sequencement
 
 /*---------------------------- variables globales ---------------------------*/
 
@@ -110,15 +112,15 @@ void setup() {
   digitalWrite(MAGPIN,HIGH);
 
   // Initialisation du PID double
-  pid_double.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
-  pid_double.setWeight(1,0.025);
+  pid_double.setGains(5, 0.001 ,0.0001,-0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double.setWeight(0.975, 0.025);
     // Attache des fonctions de retour
     pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_double.setCommandFunc(PIDcommand);
     pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_double.setEpsilon(0.005, 9);
   pid_double.setPeriod(10);
-  pid_double.setGoal(1, 0);
+  pid_double.setGoal(1.2, 0);
   pid_double.enable();
 
   // Initialisation du PID double
@@ -142,7 +144,7 @@ void setup() {
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
   pid_position.setPeriod(10);
-  pid_position.setGoal(1.2, 0);
+  pid_position.setGoal(1.3, 0);
   pid_position.enable();
 
 
@@ -219,20 +221,19 @@ void loop() {
 
   if (run_)
   {
+    /*unsigned long measureTime_ = 0;
+    bool timerSet_ = false;*/
     switch (etat_)
     {/*
       case INITTOE:
-      oscille.init();
-      if(PIDmeasurementAngleNoflip() >= 10){
-        readyTOchange_ = true;
-      }
+      
       break;
 */
       case OSCILLATION:   
         oscille.run();
         
-        if (PIDmeasurementAngleNoflip() > 135){
-          readyTOchange_ = true; 
+        if (PIDmeasurementAngleNoflip() > 145){
+          readyTOchange_ = true;
         }  
        break;
 
@@ -242,19 +243,19 @@ void loop() {
         break;
 
        case PREPARE2TOURBILLON:
-       if(PIDmeasurementAngleNoflip() > 15)
+       if(PIDmeasurementAngleNoflip() > -40)
           readyTOchange_ = true;   
        break;
     
       case STUFAITPASDTOURBILLON:
-        oscille.disable();
         pid_position.run();
+        oscille.disable();        
         if(pid_position.isAtGoal1()) {     
         readyTOchange_ = true;  }                              
-        break;
+        break;     
 
       case CALMETOE:
-        //pid_double.run();
+          pid_double.run();        
         if(CALME){
           readyTOchange_ = true; 
         }
@@ -410,11 +411,11 @@ double PIDmeasurementAngleNoflip(){ //Position du pendule
   int32_t angle_deg = PIDmeasurementAngle();
 
   //Retourne des angles entre -360 et 360 grâce à :
-  while(angle_deg < -180){
+  while(angle_deg < -184){
     angle_deg = angle_deg + 360;
     //int tours ++ 
   }
-  while(angle_deg > 180){
+  while(angle_deg > 184){
     angle_deg = angle_deg - 360;
   }
   return angle_deg;

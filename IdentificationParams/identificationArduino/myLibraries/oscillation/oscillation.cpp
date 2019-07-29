@@ -15,8 +15,8 @@ oscillation::oscillation()
     Accel = 1;                   //À
     rapportSafety = 0.9;
     angleMin = 35;
-    maxPos = 0.3;            
-    noSlipCommand = 0.8;         //CHANGER
+    maxPos = 0.42;            
+    noSlipCommand = 0.7;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
@@ -82,7 +82,7 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         //Serial.println("OOOOOOOOOOOOOOOO");
         if (startup == 1)
         {
-            commande = ((rapportSafety*0.5*maxPos)-abs((rapportSafety*0.5*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
+            commande = ((rapportSafety*0.4*maxPos)-abs((rapportSafety*0.4*maxPos)-measurementFunc2()))/(rapportSafety*0.4*maxPos);
             if (commande < noSlipCommand) commande = noSlipCommand;
             if(measurementFunc2()>rapportSafety*maxPos)
             {
