@@ -20,6 +20,8 @@
 
 #define MAGPIN          32          // Port numerique pour electroaimant
 #define POTPIN          A5          // Port analogique pour le potentiometre
+#define BUMPERAVANT     38          // if(digitalRead(BUMPERAVANT))
+#define BUMPERARRIERE   9           // if(digitalRead(BUMPERARRIERE))
 
 #define PASPARTOUR      64          // Nombre de pas par tour du moteur
 #define RAPPORTVITESSE  50          // Rapport de vitesse du moteur
@@ -277,7 +279,10 @@ void loop() {
         break;
 
       case GOGETMOREBREAD:
-        pid_retour.run();
+        digitalWrite(MAGPIN, LOW);
+        //magnet_on_ = false;
+        delay(1500);
+        //pid_retour.run();
         break;
     }
   }
@@ -397,7 +402,7 @@ void readMsg(){
     run_ = doc["In_run"];
     manage_state(run_);
   }
-  parse_msg = doc["Magnet_on"];
+  /* parse_msg = doc["Magnet_on"];
   if(!parse_msg.isNull()){
     magnet_on_ = doc["Magnet_on"];
     if (magnet_on_)
@@ -408,7 +413,7 @@ void readMsg(){
   {
     digitalWrite(MAGPIN, LOW);
   }
-  }
+  }*/
   parse_msg = doc["Competition_mode"];
   if(!parse_msg.isNull()){
      comp_mode_= doc["Competition_mode"];
