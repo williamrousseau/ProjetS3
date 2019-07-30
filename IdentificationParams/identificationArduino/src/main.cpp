@@ -281,8 +281,7 @@ void loop() {
       case GOGETMOREBREAD:
         digitalWrite(MAGPIN, LOW);
         //magnet_on_ = false;
-        delay(1500);
-        //pid_retour.run();
+        pid_retour.run();
         break;
     }
   }
