@@ -31,10 +31,16 @@
 #define PREPARE1TOURBILLON    3
 #define PREPARE2TOURBILLON    4
 #define STUFAITPASDTOURBILLON 5     // Variable d'etat pour le cas d'acceleration du sequencement
-#define PREPARE1CALME         6
-#define PREPARE2CALME         7
-#define CALMETOE              8     // Variable d'etat pour le cas de ralentissement du sequencement
+#define CALMETOE              6     // Variable d'etat pour le cas de ralentissement du sequencement
+#define GORESET               7 
 #define GOGETMOREBREAD        9     // Variable d'etat pour le cas de retour du sequencement
+
+#define INITTOE2              101
+#define COMP                  102
+#define CALMETOE2             103
+#define RETOUR                104
+#define EMILEAPASDEMOTRICITE  105
+#define RETOURCALME           106
 
 /*---------------------------- variables globales ---------------------------*/
 
@@ -43,9 +49,12 @@ MegaServo servo_;                   // objet servomoteur
 VexQuadEncoder vexEncoder_;         // objet encodeur vex
 IMU9DOF imu_;                       // objet imu
 doublePID pid_double;                     // objet PID
+doublePID pid_double2;
+doublePID pid_double3;
 doublePID pid_pendule;                     // objet PID
 doublePID pid_position;                     // objet PID
 doublePID pid_retour;
+doublePID pid_reset;
 oscillation oscille;
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
@@ -76,6 +85,8 @@ bool test_mode_, comp_mode_;
 bool readyTOchange_;
 int etat_, calmeBRO_;
 bool CALME;
+bool lecriss_ = false;
+unsigned long nextTime;
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
@@ -115,16 +126,38 @@ void setup() {
   digitalWrite(MAGPIN,HIGH);
 
   // Initialisation du PID double
-  pid_double.setGains(5, 0.001 ,0.0001,-0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
-  pid_double.setWeight(0.975, 0.025);
+  pid_double2.setGains(5, 0.001 ,0.0001, -0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double2.setWeight(0.7, 0.3);
+    // Attache des fonctions de retour
+    pid_double2.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
+    pid_double2.setCommandFunc(PIDcommand);
+    pid_double2.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_double2.setEpsilon(0.005, 13);
+  pid_double2.setPeriod(10);
+  pid_double2.setGoal(0.5, 0);
+  pid_double2.enable();
+
+  pid_double.setGains(5, 0.001 ,0.0001, -0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double.setWeight(0.9, 0.01);
     // Attache des fonctions de retour
     pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_double.setCommandFunc(PIDcommand);
     pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
-  pid_double.setEpsilon(0.005, 10);
+  pid_double.setEpsilon(0.005, 13);
   pid_double.setPeriod(10);
-  pid_double.setGoal(1.3, 0);
+  pid_double.setGoal(0.5, 0);
   pid_double.enable();
+
+  pid_double3.setGains(5, 0.001 ,0.0001, -0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double3.setWeight(0.95, 0.05);
+    // Attache des fonctions de retour
+    pid_double3.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
+    pid_double3.setCommandFunc(PIDcommand);
+    pid_double3.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_double3.setEpsilon(0.005, 13);
+  pid_double3.setPeriod(10);
+  pid_double3.setGoal(0.20, 0);
+  pid_double3.enable();
 
   // Initialisation du PID double
   pid_pendule.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
@@ -147,7 +180,7 @@ void setup() {
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
   pid_position.setPeriod(10);
-  pid_position.setGoal(1.3, 0);
+  pid_position.setGoal(1.45, 0);
   pid_position.enable();
 
   // Initialisation du PID retour
@@ -159,8 +192,26 @@ void setup() {
     pid_retour.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_retour.setEpsilon(0.005, 9);
   pid_retour.setPeriod(10);
-  pid_retour.setGoal(0.05, 0);
+  pid_retour.setGoal(0.15, 0);
   pid_retour.enable();
+
+  // Initialisation du PID reset position
+  pid_reset.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
+  pid_reset.setWeight(1,0);
+    // Attache des fonctions de retour
+    pid_reset.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
+    pid_reset.setCommandFunc(PIDcommand);
+    pid_reset.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_reset.setEpsilon(0.005, 9);
+  pid_reset.setPeriod(10);
+  pid_reset.setGoal(0, 0);
+  pid_reset.enable();
+
+
+  oscille.setCommandFunc(PIDcommand);
+  oscille.setMeasurementFunc1(PIDmeasurementAngleNoflip);
+  oscille.setMeasurementFunc2(PIDmeasurementPos);
+  oscille.enable();
 
   oscille.setCommandFunc(PIDcommand);
   oscille.setMeasurementFunc1(PIDmeasurementAngleNoflip);
@@ -189,11 +240,15 @@ void loop() {
 
   
   //pid_double.run();                                                                   //OVERWRITE POUR TESTS
-
+if (test_mode_)
+{
   if (etat_ == INITTOE && readyTOchange_)
   {
     etat_ = OSCILLATION;
     readyTOchange_ = false;
+    CALME = false;
+    oscille.setShits(0.48, 0.8, 35, 0.5);
+    oscille.setPosSapin(0.4163);
   }
   
 
@@ -222,13 +277,20 @@ void loop() {
   }
 
   if(etat_ == CALMETOE && readyTOchange_){
+    etat_ = GORESET;
+    readyTOchange_ = false;
+    CALME = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == GORESET && readyTOchange_){
     etat_ = GOGETMOREBREAD;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
 
   if(etat_ == GOGETMOREBREAD && readyTOchange_){
-    etat_ = 0;
+    etat_ = INITTOE;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
@@ -239,15 +301,28 @@ void loop() {
     /*unsigned long measureTime_ = 0;
     bool timerSet_ = false;*/
     switch (etat_)
-    {/*
+    {
       case INITTOE:
-      
+      AX_.setMotorPWM(0, -0.2);
+      AX_.setMotorPWM(1, -0.2);
+      if(digitalRead(BUMPERARRIERE)){          
+          AX_.setMotorPWM(0, 0);
+          AX_.setMotorPWM(1, 0);
+          AX_.resetEncoder(0);
+          AX_.resetEncoder(1);          
+          digitalWrite(MAGPIN,HIGH);
+          pid_reset.run();
+          if(CALME){
+            vexEncoder_.reset();
+            pid_reset.disable1();
+            readyTOchange_ = true;
+          }
+        }  
       break;
-*/
+
       case OSCILLATION:   
-        oscille.run();
-        
-        if (PIDmeasurementAngleNoflip() > 140){
+        oscille.run();        
+        if (PIDmeasurementAngleNoflip() > 151){
           readyTOchange_ = true;
         }  
        break;
@@ -268,23 +343,191 @@ void loop() {
         pid_position.run();
         oscille.disable();        
         if(pid_position.isAtGoal1()) {     
-        readyTOchange_ = true;  }                              
+          readyTOchange_ = true;
+          pid_position.disable1();  
+          }                              
         break;     
 
       case CALMETOE:
-          pid_double.run();        
+        //pid_double.enable();
+        pid_double.run();        
         if(CALME){
           readyTOchange_ = true;
+          pid_double.disableAll();
+          pid_position.enable();
         }
         break;
 
+      case GORESET:
+        AX_.setMotorPWM(0, 0.2);
+        AX_.setMotorPWM(1, 0.2);
+          if(digitalRead(BUMPERAVANT)){          
+            AX_.setMotorPWM(0, 0);
+            AX_.setMotorPWM(1, 0);            
+            readyTOchange_ = true;           
+        }
+      break;
+
       case GOGETMOREBREAD:
         digitalWrite(MAGPIN, LOW);
+        readyTOchange_ = true;
+        oscille.enable();
+        pid_double.enable(); 
         //magnet_on_ = false;
-        pid_retour.run();
+        /*pid_retour.run();
+        if(pid_retour.isAtGoal1() + 0.9){           
+           digitalWrite(MAGPIN, HIGH);
+        }   
+        if(pid_retour.isAtGoal1()){           
+                     
+        } */         
         break;
     }
   }
+}
+if (comp_mode_)
+{
+  if (etat_ == INITTOE2 && readyTOchange_)
+  {
+    etat_ = COMP;
+    readyTOchange_ = false;
+    CALME = false;
+    //oscille.setShits(01.5, 1, 35, 0.9);
+    //oscille.setPosSapin(0.6);
+  }
+  
+
+  if(etat_ == COMP && readyTOchange_){
+    etat_ = CALMETOE2;
+    nextTime = millis() + 1000;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == CALMETOE2 && readyTOchange_){
+    etat_ = RETOUR;
+    digitalWrite(MAGPIN, LOW);
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+  if(etat_ == RETOUR && readyTOchange_){
+    etat_ = EMILEAPASDEMOTRICITE;
+    nextTime = millis() + 2000;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == EMILEAPASDEMOTRICITE && readyTOchange_){
+    etat_ = RETOURCALME;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == RETOURCALME && readyTOchange_){
+    etat_ = INITTOE2;
+    nextTime = millis() + 1000;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+/*
+
+  if(etat_ == PREPARE2TOURBILLON && readyTOchange_){
+    etat_ = STUFAITPASDTOURBILLON;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
+    etat_ = CALMETOE;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == CALMETOE && readyTOchange_){
+    etat_ = GORESET;
+    readyTOchange_ = false;
+    CALME = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == GORESET && readyTOchange_){
+    etat_ = GOGETMOREBREAD;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }
+
+  if(etat_ == GOGETMOREBREAD && readyTOchange_){
+    etat_ = INITTOE;
+    readyTOchange_ = false;
+    // Reste des initialisation pour le prochain état
+  }*/
+
+  if (run_)
+  {
+
+    /*unsigned long measureTime_ = 0;
+    bool timerSet_ = false;*/
+    switch (etat_)
+    {
+      case INITTOE2:
+      AX_.setMotorPWM(0, -0.2);
+      AX_.setMotorPWM(1, -0.2);
+      digitalWrite(MAGPIN,HIGH);
+      if(digitalRead(BUMPERARRIERE)){          
+          AX_.setMotorPWM(0, 0);
+          AX_.setMotorPWM(1, 0);
+          AX_.resetEncoder(0);
+          AX_.resetEncoder(1); 
+          if (millis() > nextTime)
+          {
+            readyTOchange_ = true;
+          }
+          }
+      
+          
+      break;
+
+      case COMP:       
+        PIDcommand(1);
+        if (PIDmeasurementPos()>0.5)
+        {
+          PIDcommand(0);
+          readyTOchange_ = true;
+        }
+       break;
+
+      case CALMETOE2:
+      pid_double2.run();
+      if (millis() > nextTime)
+      { 
+        digitalWrite(MAGPIN, LOW);
+        readyTOchange_ = true;
+      }
+        break;
+
+       case RETOUR:
+       PIDcommand(-1);
+       if(PIDmeasurementPos() < 0.20)
+        readyTOchange_ = true;   
+       break;
+    
+      case EMILEAPASDEMOTRICITE:
+        pid_double3.run();
+       if(millis() > nextTime)
+        readyTOchange_ = true;   
+       break;
+
+      case RETOURCALME:
+        PIDcommand(-0.2);
+        digitalWrite(MAGPIN,HIGH);
+        if(digitalRead(BUMPERARRIERE))
+          PIDcommand(0);
+          readyTOchange_ = true;                       
+        break;     
+      
+    }
+  }
+}
   // mise a jour des chronometres
   timerSendMsg_.update();
   timerPulse_.update();
@@ -347,6 +590,7 @@ void sendMsg(){
   doc["Etat"] = etat_;
   doc["Angle"] = PIDmeasurementAngleNoflip();
   doc["Nb_fois_0"] = calmeBRO_;
+  doc["Le_criss"] = digitalRead(BUMPERAVANT);
 
 
   // Serialisation
@@ -357,14 +601,18 @@ void sendMsg(){
 }
 
 double get_energy(){
-  energy_ = energy_ + (AX_.getVoltage() * AX_.getCurrent() * UPDATE_PERIODE/1000);
+  energy_ = energy_ + (AX_.getVoltage() * (AX_.getCurrent()/1000) * UPDATE_PERIODE/1000);
   return energy_;
 }
 
 void manage_state(bool run_){
-  if (run_)
+  if (run_ && test_mode_)
   {
-    etat_ = OSCILLATION;
+    etat_ = INITTOE;
+  }
+  if (run_ && comp_mode_)
+  {
+    etat_ = INITTOE2;
   }
   if (!run_)
   {
@@ -467,6 +715,7 @@ void PIDgoalReached2(){
   calmeBRO_ = calmeBRO_ + 1;
   if(calmeBRO_ > 200){
      CALME = true;
-     pid_double.disableAll();
+     //pid_double.disableAll();
+     calmeBRO_ = 0;
   }
 }

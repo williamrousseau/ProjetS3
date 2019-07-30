@@ -11,12 +11,12 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    pointeActivite = 0.8;        //PARAMS
-    Accel = 0.55;                   //À
+    pointeActivite = 0;        //PARAMS
+    Accel = 0;                   //À
     rapportSafety = 0.7;
-    angleMin = 35;
-    maxPos = 0.15;            
-    noSlipCommand = 0.7;         //CHANGER
+    angleMin = 0;
+    maxPos = 0;            
+    noSlipCommand = 0;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
@@ -84,7 +84,7 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         {
             commande = ((rapportSafety*0.25*maxPos)-abs((rapportSafety*0.25*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
             if (commande < noSlipCommand) commande = noSlipCommand;
-            if(measurementFunc2()>=rapportSafety*maxPos)
+            if(measurementFunc2()>=0.7*rapportSafety*maxPos)
             {
                 commande = 0;
                 if (omega > 0)
@@ -216,7 +216,18 @@ void oscillation::vitesseAngulaire(double angle)
     }
 }
 
-void oscillation::setMaxPos(double posSapin)
+void oscillation::setPosSapin(double posSapin)
 {
-    maxPos = posSapin-0.1;
+    maxPos = posSapin-0.1163;
+}
+
+
+
+
+void oscillation::setShits(float _accel, float _pointeActivite, int _angleMin, float _noSlipCommand)
+{
+    Accel = _accel;
+    pointeActivite = _pointeActivite;
+    angleMin = _angleMin;
+    noSlipCommand = _noSlipCommand;
 }

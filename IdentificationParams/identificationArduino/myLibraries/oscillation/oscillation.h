@@ -25,9 +25,10 @@ class oscillation
     void disable();
     void vitesseAngulaire(double angle);
     void run();
-    void setMaxPos(double posSapin);
+    void setPosSapin(double posSapin);
 
     void init();
+    void setShits(float _accel, float _pointeActivite, int _angleMin, float _noSlipCommand);
 
 
   private:
