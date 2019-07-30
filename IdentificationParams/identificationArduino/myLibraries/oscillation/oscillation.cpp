@@ -13,9 +13,9 @@ oscillation::oscillation()
 {
     pointeActivite = 0.8;        //PARAMS
     Accel = 0.55;                   //À
-    rapportSafety = 0.9;
+    rapportSafety = 0.7;
     angleMin = 35;
-    maxPos = 0.37;            
+    maxPos = 0.15;            
     noSlipCommand = 0.7;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
@@ -82,9 +82,9 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         //Serial.println("OOOOOOOOOOOOOOOO");
         if (startup == 1)
         {
-            commande = ((rapportSafety*0.4*maxPos)-abs((rapportSafety*0.4*maxPos)-measurementFunc2()))/(rapportSafety*0.4*maxPos);
+            commande = ((rapportSafety*0.25*maxPos)-abs((rapportSafety*0.25*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
             if (commande < noSlipCommand) commande = noSlipCommand;
-            if(measurementFunc2()>rapportSafety*maxPos)
+            if(measurementFunc2()>=rapportSafety*maxPos)
             {
                 commande = 0;
                 if (omega > 0)
@@ -95,7 +95,7 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         }
         if (startup == 2)
         {
-            commande = -((rapportSafety*0.25*maxPos)-abs((rapportSafety*0.25*maxPos)-measurementFunc2()))/(rapportSafety*0.25*maxPos);
+            commande = -((rapportSafety*0.5*maxPos)-abs((rapportSafety*0.5*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
             if (commande > -noSlipCommand) commande = -noSlipCommand;
             if(measurementFunc2()<rapportSafety*0.5*maxPos)
             {
