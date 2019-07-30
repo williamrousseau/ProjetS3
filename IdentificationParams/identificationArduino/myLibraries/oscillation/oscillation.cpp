@@ -12,10 +12,10 @@ Class to control a PID
 oscillation::oscillation()
 {
     pointeActivite = 0.8;        //PARAMS
-    Accel = 1;                   //À
+    Accel = 0.55;                   //À
     rapportSafety = 0.9;
     angleMin = 35;
-    maxPos = 0.42;            
+    maxPos = 0.37;            
     noSlipCommand = 0.7;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;

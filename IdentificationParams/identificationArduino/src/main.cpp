@@ -43,6 +43,7 @@ IMU9DOF imu_;                       // objet imu
 doublePID pid_double;                     // objet PID
 doublePID pid_pendule;                     // objet PID
 doublePID pid_position;                     // objet PID
+doublePID pid_retour;
 oscillation oscille;
 
 volatile bool shouldSend_ = false;  // drapeau prêt à envoyer un message
@@ -71,7 +72,7 @@ double energy_;
 bool magnet_on_;
 bool test_mode_, comp_mode_;
 bool readyTOchange_;
-int etat_;
+int etat_, calmeBRO_;
 bool CALME;
 /*------------------------- Prototypes de fonctions -------------------------*/
 
@@ -118,9 +119,9 @@ void setup() {
     pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_double.setCommandFunc(PIDcommand);
     pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
-  pid_double.setEpsilon(0.005, 9);
+  pid_double.setEpsilon(0.005, 10);
   pid_double.setPeriod(10);
-  pid_double.setGoal(1.2, 0);
+  pid_double.setGoal(1.3, 0);
   pid_double.enable();
 
   // Initialisation du PID double
@@ -147,6 +148,17 @@ void setup() {
   pid_position.setGoal(1.3, 0);
   pid_position.enable();
 
+  // Initialisation du PID retour
+  pid_retour.setGains(5, 0.001 ,0.0001,-0.5, -0, -0.1);
+  pid_retour.setWeight(1,0);
+    // Attache des fonctions de retour
+    pid_retour.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
+    pid_retour.setCommandFunc(PIDcommand);
+    pid_retour.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
+  pid_retour.setEpsilon(0.005, 9);
+  pid_retour.setPeriod(10);
+  pid_retour.setGoal(0.05, 0);
+  pid_retour.enable();
 
   oscille.setCommandFunc(PIDcommand);
   oscille.setMeasurementFunc1(PIDmeasurementAngleNoflip);
@@ -158,12 +170,13 @@ void setup() {
   etat_ = 0;
   run_ = false;
   CALME = false;
+  calmeBRO_ = 0;
 }
 
 
 /* Boucle principale (infinie)*/
 void loop() {
-  //digitalWrite(MAGPIN, HIGH);
+  
 
   if(shouldRead_){
     readMsg();
@@ -183,7 +196,7 @@ void loop() {
   
 
   if(etat_ == OSCILLATION && readyTOchange_){
-    etat_ = STUFAITPASDTOURBILLON;
+    etat_ = PREPARE1TOURBILLON;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
@@ -218,9 +231,9 @@ void loop() {
     // Reste des initialisation pour le prochain état
   }
 
-
   if (run_)
   {
+
     /*unsigned long measureTime_ = 0;
     bool timerSet_ = false;*/
     switch (etat_)
@@ -232,18 +245,20 @@ void loop() {
       case OSCILLATION:   
         oscille.run();
         
-        if (PIDmeasurementAngleNoflip() > 145){
+        if (PIDmeasurementAngleNoflip() > 140){
           readyTOchange_ = true;
         }  
        break;
 
        case PREPARE1TOURBILLON:
-       if(PIDmeasurementAngleNoflip() < -100) {
+       oscille.run();
+       if(PIDmeasurementAngleNoflip() < -90) {
         readyTOchange_ = true;  }
         break;
 
        case PREPARE2TOURBILLON:
-       if(PIDmeasurementAngleNoflip() > -40)
+       oscille.run();
+       if(PIDmeasurementAngleNoflip() > 40)
           readyTOchange_ = true;   
        break;
     
@@ -257,12 +272,12 @@ void loop() {
       case CALMETOE:
           pid_double.run();        
         if(CALME){
-          readyTOchange_ = true; 
+          readyTOchange_ = true;
         }
         break;
 
       case GOGETMOREBREAD:
-        //pid_position.run();
+        pid_retour.run();
         break;
     }
   }
@@ -327,6 +342,7 @@ void sendMsg(){
   doc["Position"] = PIDmeasurementPos() * 100;
   doc["Etat"] = etat_;
   doc["Angle"] = PIDmeasurementAngleNoflip();
+  doc["Nb_fois_0"] = calmeBRO_;
 
 
   // Serialisation
@@ -384,6 +400,14 @@ void readMsg(){
   parse_msg = doc["Magnet_on"];
   if(!parse_msg.isNull()){
     magnet_on_ = doc["Magnet_on"];
+    if (magnet_on_)
+  {
+    digitalWrite(MAGPIN, HIGH);
+  }
+  if(!magnet_on_)
+  {
+    digitalWrite(MAGPIN, LOW);
+  }
   }
   parse_msg = doc["Competition_mode"];
   if(!parse_msg.isNull()){
@@ -404,7 +428,7 @@ double PIDmeasurementPos(){ //Position du chariot
   return position;
 }
 double PIDmeasurementAngle(){ //Position du pendule
-  return vexEncoder_.getCount()*4;
+  return vexEncoder_.getCount()*2;
 }
 
 double PIDmeasurementAngleNoflip(){ //Position du pendule
@@ -433,8 +457,12 @@ void PIDgoalReached1(){
   //pid_double.disable1();
 }
 void PIDgoalReachedDouble(){
-  CALME = true;
+    
 }
 void PIDgoalReached2(){
-  //pid_double.disable2();
+  calmeBRO_ = calmeBRO_ + 1;
+  if(calmeBRO_ > 200){
+     CALME = true;
+     pid_double.disableAll();
+  }
 }
