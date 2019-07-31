@@ -78,7 +78,7 @@ const double WheelR = 0.025;
 unsigned long timeout;
 Obstacle Sapin1;
 bool run_;
-int nb_obstacle_;
+double distance_obstacle_;
 double energy_;
 bool magnet_on_;
 bool test_mode_, comp_mode_;
@@ -87,6 +87,7 @@ int etat_, calmeBRO_;
 bool CALME;
 bool lecriss_ = false;
 unsigned long nextTime;
+
 /*------------------------- Prototypes de fonctions -------------------------*/
 
 void timerCallback();
@@ -123,7 +124,7 @@ void setup() {
 
   //Electroaimant
   pinMode(MAGPIN,OUTPUT);
-  digitalWrite(MAGPIN,HIGH);
+  //digitalWrite(MAGPIN,HIGH);
 
   // Initialisation du PID double
   pid_double2.setGains(5, 0.001 ,0.0001, -0.5, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
@@ -137,15 +138,15 @@ void setup() {
   pid_double2.setGoal(0.5, 0);
   pid_double2.enable();
 
-  pid_double.setGains(5, 0.001 ,0.0001, -0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
-  pid_double.setWeight(0.9, 0.01);
+  pid_double.setGains(5, 0.001 ,0.0001, -0.3, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
+  pid_double.setWeight(0.98, 0.02);
     // Attache des fonctions de retour
     pid_double.setMeasurementFunc(PIDmeasurementPos, PIDmeasurementAngleNoflip/*Noflip*/);
     pid_double.setCommandFunc(PIDcommand);
     pid_double.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_double.setEpsilon(0.005, 13);
   pid_double.setPeriod(10);
-  pid_double.setGoal(0.5, 0);
+  pid_double.setGoal(1.375, 0);
   pid_double.enable();
 
   pid_double3.setGains(5, 0.001 ,0.0001, -0.2, -0, -0.1/*5, 0 ,0.0001 , 10, 0, 1*/);
@@ -180,7 +181,7 @@ void setup() {
     pid_position.setAtGoalFunc(PIDgoalReached1, PIDgoalReached2);
   pid_position.setEpsilon(0.005, 9);
   pid_position.setPeriod(10);
-  pid_position.setGoal(1.45, 0);
+  pid_position.setGoal(1.375, 0);
   pid_position.enable();
 
   // Initialisation du PID retour
@@ -247,8 +248,7 @@ if (test_mode_)
     etat_ = OSCILLATION;
     readyTOchange_ = false;
     CALME = false;
-    oscille.setShits(0.48, 0.8, 35, 0.5);
-    oscille.setPosSapin(0.4163);
+    //oscille.setShits(0.48, 0.8, 35, 0.5);
   }
   
 
@@ -271,19 +271,20 @@ if (test_mode_)
   }
 
   if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
-    etat_ = CALMETOE;
+    etat_ = GORESET;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
 
-  if(etat_ == CALMETOE && readyTOchange_){
-    etat_ = GORESET;
+  if(etat_ == GORESET && readyTOchange_){
+    etat_ = CALMETOE;
+    nextTime = millis() + 10000;
     readyTOchange_ = false;
     CALME = false;
     // Reste des initialisation pour le prochain état
   }
 
-  if(etat_ == GORESET && readyTOchange_){
+  if(etat_ == CALMETOE && readyTOchange_){
     etat_ = GOGETMOREBREAD;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
@@ -292,6 +293,7 @@ if (test_mode_)
   if(etat_ == GOGETMOREBREAD && readyTOchange_){
     etat_ = INITTOE;
     readyTOchange_ = false;
+    digitalWrite(MAGPIN, LOW);
     // Reste des initialisation pour le prochain état
   }
 
@@ -312,11 +314,8 @@ if (test_mode_)
           AX_.resetEncoder(1);          
           digitalWrite(MAGPIN,HIGH);
           pid_reset.run();
-          if(CALME){
-            vexEncoder_.reset();
-            pid_reset.disable1();
-            readyTOchange_ = true;
-          }
+          pid_reset.disable1();
+          readyTOchange_ = true;
         }  
       break;
 
@@ -348,25 +347,28 @@ if (test_mode_)
           }                              
         break;     
 
+      case GORESET:
+              AX_.setMotorPWM(0, 0.1);
+              AX_.setMotorPWM(1, 0.1);
+                if(digitalRead(BUMPERAVANT)){          
+                  AX_.setMotorPWM(0, 0);
+                  AX_.setMotorPWM(1, 0);            
+                  readyTOchange_ = true;           
+              }
+            break;
+
       case CALMETOE:
         //pid_double.enable();
         pid_double.run();        
-        if(CALME){
+        if(millis()>nextTime){
+          digitalWrite(MAGPIN, LOW);
           readyTOchange_ = true;
           pid_double.disableAll();
           pid_position.enable();
         }
         break;
 
-      case GORESET:
-        AX_.setMotorPWM(0, 0.2);
-        AX_.setMotorPWM(1, 0.2);
-          if(digitalRead(BUMPERAVANT)){          
-            AX_.setMotorPWM(0, 0);
-            AX_.setMotorPWM(1, 0);            
-            readyTOchange_ = true;           
-        }
-      break;
+      
 
       case GOGETMOREBREAD:
         digitalWrite(MAGPIN, LOW);
@@ -412,7 +414,7 @@ if (comp_mode_)
   }
   if(etat_ == RETOUR && readyTOchange_){
     etat_ = EMILEAPASDEMOTRICITE;
-    nextTime = millis() + 2000;
+    nextTime = millis() + 3000;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
@@ -429,38 +431,7 @@ if (comp_mode_)
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
-/*
 
-  if(etat_ == PREPARE2TOURBILLON && readyTOchange_){
-    etat_ = STUFAITPASDTOURBILLON;
-    readyTOchange_ = false;
-    // Reste des initialisation pour le prochain état
-  }
-
-  if(etat_ == STUFAITPASDTOURBILLON && readyTOchange_){
-    etat_ = CALMETOE;
-    readyTOchange_ = false;
-    // Reste des initialisation pour le prochain état
-  }
-
-  if(etat_ == CALMETOE && readyTOchange_){
-    etat_ = GORESET;
-    readyTOchange_ = false;
-    CALME = false;
-    // Reste des initialisation pour le prochain état
-  }
-
-  if(etat_ == GORESET && readyTOchange_){
-    etat_ = GOGETMOREBREAD;
-    readyTOchange_ = false;
-    // Reste des initialisation pour le prochain état
-  }
-
-  if(etat_ == GOGETMOREBREAD && readyTOchange_){
-    etat_ = INITTOE;
-    readyTOchange_ = false;
-    // Reste des initialisation pour le prochain état
-  }*/
 
   if (run_)
   {
@@ -579,7 +550,7 @@ void sendMsg(){
   doc["Time"] = millis();
   doc["In_run"] = run_;
   doc["Magnet_on"] = magnet_on_;
-  doc["Nb_obstacle"] = nb_obstacle_;
+  doc["Distance_obstacle"] = distance_obstacle_;
   doc["Voltage"] = AX_.getVoltage();
   doc["Current"] = AX_.getCurrent(); 
   doc["Power"] = AX_.getVoltage() * AX_.getCurrent();
@@ -640,9 +611,10 @@ void readMsg(){
   
   // Analyse des éléments du message message
 
-  parse_msg = doc["Nb_obstacle"];
+  parse_msg = doc["Distance_obstacle"];
   if(!parse_msg.isNull()){
-     nb_obstacle_ = doc["Nb_obstacle"];
+     distance_obstacle_ = doc["Distance_obstacle"];
+     oscille.setPosSapin(distance_obstacle_);
   }
   parse_msg = doc["In_run"];
   if(!parse_msg.isNull()){
@@ -713,7 +685,7 @@ void PIDgoalReachedDouble(){
 }
 void PIDgoalReached2(){
   calmeBRO_ = calmeBRO_ + 1;
-  if(calmeBRO_ > 200){
+  if(calmeBRO_ > 300){
      CALME = true;
      //pid_double.disableAll();
      calmeBRO_ = 0;

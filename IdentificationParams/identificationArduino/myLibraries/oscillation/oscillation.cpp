@@ -11,12 +11,12 @@ Class to control a PID
 
 oscillation::oscillation()
 {
-    pointeActivite = 0;        //PARAMS
-    Accel = 0;                   //À
+    pointeActivite = 0.8;        //PARAMS
+    Accel = 0.52;                   //À
     rapportSafety = 0.7;
-    angleMin = 0;
+    angleMin = 35;
     maxPos = 0;            
-    noSlipCommand = 0;         //CHANGER
+    noSlipCommand = 0.4;         //CHANGER
     tailleAngle = 0;
     capaciteAngle = 10;
     omega = 0;
@@ -82,9 +82,9 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         //Serial.println("OOOOOOOOOOOOOOOO");
         if (startup == 1)
         {
-            commande = ((rapportSafety*0.25*maxPos)-abs((rapportSafety*0.25*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
+            commande = ((rapportSafety*0.5*maxPos)-abs((rapportSafety*0.5*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
             if (commande < noSlipCommand) commande = noSlipCommand;
-            if(measurementFunc2()>=0.7*rapportSafety*maxPos)
+            if(measurementFunc2()>=rapportSafety*maxPos)
             {
                 commande = 0;
                 if (omega > 0)
@@ -97,7 +97,7 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         {
             commande = -((rapportSafety*0.5*maxPos)-abs((rapportSafety*0.5*maxPos)-measurementFunc2()))/(rapportSafety*0.5*maxPos);
             if (commande > -noSlipCommand) commande = -noSlipCommand;
-            if(measurementFunc2()<rapportSafety*0.5*maxPos)
+            if(measurementFunc2()<rapportSafety*maxPos)
             {
                 commande = 0;
                 startup = 0;
@@ -162,13 +162,13 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
             {
                 commande = 0;
             }
-            else if (angle <= 0)
+            if (angle <= 0)
             {
-                commande = -Acceleration*(topAngle-angle)/topAngle;
+                commande = -1.15*Acceleration*(topAngle-angle)/topAngle;
             }
             else if (angle > 0)
             {
-                commande = -Acceleration*(belowAngle-angle)/belowAngle;
+                commande = -1.15*Acceleration*(belowAngle-angle)/belowAngle;
             }
             if (commande<-1)
             {
