@@ -122,6 +122,12 @@ void setup() {
   timerSendMsg_.setCallback(timerCallback);
   timerSendMsg_.enable();
 
+  if(digitalRead(BUMPERARRIERE))
+{
+  AX_.resetEncoder(0);
+  AX_.resetEncoder(1);
+}
+
   //Electroaimant
   pinMode(MAGPIN,OUTPUT);
   //digitalWrite(MAGPIN,HIGH);
@@ -278,7 +284,7 @@ if (test_mode_)
 
   if(etat_ == GORESET && readyTOchange_){
     etat_ = CALMETOE;
-    nextTime = millis() + 10000;
+    nextTime = millis() + 7500;
     readyTOchange_ = false;
     CALME = false;
     // Reste des initialisation pour le prochain état
@@ -321,7 +327,7 @@ if (test_mode_)
 
       case OSCILLATION:   
         oscille.run();        
-        if (PIDmeasurementAngleNoflip() > 151){
+        if (PIDmeasurementAngleNoflip() > 147){
           readyTOchange_ = true;
         }  
        break;
@@ -401,7 +407,7 @@ if (comp_mode_)
 
   if(etat_ == COMP && readyTOchange_){
     etat_ = CALMETOE2;
-    nextTime = millis() + 1000;
+    nextTime = millis() + 300;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
@@ -414,7 +420,7 @@ if (comp_mode_)
   }
   if(etat_ == RETOUR && readyTOchange_){
     etat_ = EMILEAPASDEMOTRICITE;
-    nextTime = millis() + 3000;
+    nextTime = millis() + 1500;
     readyTOchange_ = false;
     // Reste des initialisation pour le prochain état
   }
@@ -489,9 +495,11 @@ if (comp_mode_)
        break;
 
       case RETOURCALME:
-        PIDcommand(-0.2);
+        PIDcommand(-0.5);
         digitalWrite(MAGPIN,HIGH);
         if(digitalRead(BUMPERARRIERE))
+          AX_.resetEncoder(0);
+          AX_.resetEncoder(1);
           PIDcommand(0);
           readyTOchange_ = true;                       
         break;     
@@ -572,7 +580,7 @@ void sendMsg(){
 }
 
 double get_energy(){
-  energy_ = energy_ + (AX_.getVoltage() * (AX_.getCurrent()/1000) * UPDATE_PERIODE/1000);
+  energy_ = energy_ + (AX_.getVoltage() * (AX_.getCurrent()) * UPDATE_PERIODE*1000);
   return energy_;
 }
 

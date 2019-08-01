@@ -12,9 +12,9 @@ Class to control a PID
 oscillation::oscillation()
 {
     pointeActivite = 0.8;        //PARAMS
-    Accel = 0.52;                   //À
-    rapportSafety = 0.7;
-    angleMin = 35;
+    Accel = 0.48;                   //À
+    rapportSafety = 0.95;
+    angleMin = 90;
     maxPos = 0;            
     noSlipCommand = 0.4;         //CHANGER
     tailleAngle = 0;
@@ -158,17 +158,17 @@ void oscillation::commandeOscillation(double angle, float Acceleration)
         sens = -1;
         if(angle > topAngle && angle < belowAngle)
         {
-            if (measurementFunc2() < 0.05)
+            if (measurementFunc2() < 0.025)
             {
                 commande = 0;
             }
-            if (angle <= 0)
+            else if (angle <= 0)
             {
-                commande = -1.15*Acceleration*(topAngle-angle)/topAngle;
+                commande = -1.08*Acceleration*(topAngle-angle)/topAngle;
             }
             else if (angle > 0)
             {
-                commande = -1.15*Acceleration*(belowAngle-angle)/belowAngle;
+                commande = -1.08*Acceleration*(belowAngle-angle)/belowAngle;
             }
             if (commande<-1)
             {
